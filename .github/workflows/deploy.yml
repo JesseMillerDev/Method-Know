@@ -16,7 +16,7 @@ jobs:
   deploy-backend:
     name: 🚀 Deploy Backend (Fly.io)
     runs-on: ubuntu-latest
-    environment: prod
+    environment: Production
     steps:
       - uses: actions/checkout@v4
 
