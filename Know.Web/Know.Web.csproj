@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <Target Name="TailwindBuild" BeforeTargets="Build">
+    <Exec Command="npm install" Condition="!Exists('node_modules') AND Exists('package.json')" />
     <Exec Command="npm run build:css" Condition="Exists('package.json')" />
   </Target>
 
