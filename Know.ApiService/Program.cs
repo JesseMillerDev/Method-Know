@@ -130,7 +130,8 @@ app.MapGet("/api/users/{userId}/articles", async (string userId, VectorDbService
     var articles = await vectorService.GetArticlesByUserIdAsync(userId);
     return Results.Ok(articles);
 })
-.WithName("GetUserArticles");
+.WithName("GetUserArticles")
+.RequireAuthorization();
 
 app.Run();
 
