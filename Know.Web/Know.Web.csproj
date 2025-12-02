@@ -11,4 +11,8 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.3" PrivateAssets="all" />
   </ItemGroup>
 
+  <Target Name="TailwindBuild" BeforeTargets="Build">
+    <Exec Command="npm run build:css" Condition="Exists('package.json')" />
+  </Target>
+
 </Project>

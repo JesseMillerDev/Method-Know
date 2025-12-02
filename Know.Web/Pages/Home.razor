@@ -2,6 +2,95 @@
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<PageTitle>Resources</PageTitle>
 
-Welcome to your new app.
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-neutral-900">Resources</h1>
+    <p class="mt-2 text-neutral-500">A curated list of knowledge and tools.</p>
+</div>
+
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    @foreach (var resource in Resources)
+    {
+        <div class="group relative bg-white border border-neutral-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-200 cursor-pointer">
+            <div class="flex items-center justify-between mb-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-800">
+                    @resource.Category
+                </span>
+                <span class="text-neutral-400 group-hover:text-neutral-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                    </svg>
+                </span>
+            </div>
+            <h3 class="text-lg font-semibold text-neutral-900 group-hover:text-black mb-2">
+                @resource.Title
+            </h3>
+            <p class="text-sm text-neutral-500 line-clamp-3">
+                @resource.Description
+            </p>
+            <div class="mt-4 flex items-center gap-2">
+                @foreach (var tag in resource.Tags)
+                {
+                    <span class="text-xs text-neutral-400">#@tag</span>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private List<ResourceItem> Resources = new()
+    {
+        new ResourceItem
+        {
+            Title = "Understanding Blazor Architecture",
+            Description = "A deep dive into how Blazor WebAssembly works under the hood, including the render tree and event handling.",
+            Category = "Documentation",
+            Tags = new[] { "Blazor", "Architecture" }
+        },
+        new ResourceItem
+        {
+            Title = "Tailwind CSS Best Practices",
+            Description = "Learn how to structure your utility classes and configure your theme for maximum maintainability.",
+            Category = "Tutorials",
+            Tags = new[] { "CSS", "Tailwind" }
+        },
+        new ResourceItem
+        {
+            Title = "State Management Patterns",
+            Description = "Exploring different ways to manage state in complex .NET applications, from Flux to MVVM.",
+            Category = "Articles",
+            Tags = new[] { "Patterns", "State" }
+        },
+        new ResourceItem
+        {
+            Title = "Async/Await in C#",
+            Description = "Mastering asynchronous programming in C# to build responsive and scalable applications.",
+            Category = "Documentation",
+            Tags = new[] { "C#", "Async" }
+        },
+        new ResourceItem
+        {
+            Title = "Building Accessible Web Apps",
+            Description = "A guide to ensuring your web applications are usable by everyone, covering ARIA labels and keyboard navigation.",
+            Category = "Tutorials",
+            Tags = new[] { "Accessibility", "Web" }
+        },
+        new ResourceItem
+        {
+            Title = "Microservices with .NET",
+            Description = "Designing and deploying microservices using ASP.NET Core and Docker containers.",
+            Category = "Articles",
+            Tags = new[] { "Microservices", "Docker" }
+        }
+    };
+
+    public class ResourceItem
+    {
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Category { get; set; } = "";
+        public string[] Tags { get; set; } = Array.Empty<string>();
+    }
+}
