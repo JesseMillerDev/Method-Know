@@ -1,0 +1,59 @@
+name: Deploy Method-Know
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+env:
+  # 🔧 CONFIGURATION: Adjust these paths to match your folder structure
+  BACKEND_PATH: "./Know.ApiService" 
+  FRONTEND_PATH: "./Know.Web"
+
+jobs:
+  # ------------------------------------------------------------------
+  # JOB 1: Deploy Backend to Fly.io
+  # ------------------------------------------------------------------
+  deploy-backend:
+    name: 🚀 Deploy Backend (Fly.io)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      
+      # This builds the Dockerfile on Fly's remote builder and deploys it
+      - name: Deploy to Fly.io
+        run: flyctl deploy --remote-only
+        working-directory: ${{ env.BACKEND_PATH }}
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+
+  # ------------------------------------------------------------------
+  # JOB 2: Deploy Frontend to Vercel
+  # ------------------------------------------------------------------
+  deploy-frontend:
+    name: ⚡ Deploy Frontend (Vercel)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      # Compile Blazor WASM to static files (HTML/CSS/DLLs/WASM)
+      - name: Publish Blazor WASM
+        run: dotnet publish -c Release -o release-output
+        working-directory: ${{ env.FRONTEND_PATH }}
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      # Deploy ONLY the static 'wwwroot' folder to Vercel
+      - name: Deploy to Vercel
+        working-directory: ${{ env.FRONTEND_PATH }}
+        run: vercel deploy ./release-output/wwwroot --prod --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

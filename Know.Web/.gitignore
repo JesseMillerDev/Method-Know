@@ -1,0 +1,13 @@
+# .gitignore for .NET 9
+bin/
+obj/
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+[Dd]ebug/
+[Rr]elease/
+wwwroot/_framework/
+appsettings.Development.json
+secrets.json
