@@ -313,7 +313,303 @@
     .validation-message.error {
         animation: shake 0.5s ease-in-out, fadeIn 0.3s ease-out;
     }
+
+    /* ============================================
+       DASHBOARD COMPONENTS
+       ============================================ */
+
+    /* Premium Sidebar Navigation */
+    .sidebar-nav-item {
+        @apply relative block px-3 py-2.5 text-sm font-medium transition-all duration-200;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .sidebar-nav-item::before {
+        content: '';
+        @apply absolute left-0 top-0 bottom-0 w-1 bg-white opacity-0 transition-opacity duration-200;
+    }
+
+    .sidebar-nav-item:hover {
+        background: rgba(255, 255, 255, 0.05);
+        color: white;
+    }
+
+    .sidebar-nav-item:hover::before {
+        opacity: 1;
+    }
+
+    .sidebar-nav-item.active {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+    }
+
+    .sidebar-nav-item.active::before {
+        opacity: 1;
+    }
+
+    .sidebar-nav-item svg {
+        transition: transform 200ms ease-out;
+    }
+
+    .sidebar-nav-item:hover svg {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    /* Premium Resource Card */
+    .resource-card {
+        @apply relative bg-white rounded-2xl p-6 transition-all duration-300;
+        background: rgba(255, 255, 255, 0.85);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transform-style: preserve-3d;
+        cursor: pointer;
+    }
+
+    .resource-card:hover {
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+        transform: perspective(1000px) translateY(-8px) rotateX(2deg);
+    }
+
+    .resource-card::after {
+        content: '';
+        @apply absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-300;
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.02) 0%, rgba(0, 0, 0, 0.01) 100%);
+    }
+
+    .resource-card:hover::after {
+        opacity: 1;
+    }
+
+    /* Category Badge */
+    .category-badge {
+        @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider;
+        background: linear-gradient(135deg, #000 0%, #1a1a1a 100%);
+        color: white;
+        letter-spacing: 0.05em;
+        transition: all 200ms ease-out;
+    }
+
+    .category-badge:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Resource Title */
+    .resource-title {
+        @apply text-lg font-semibold text-black mb-2 transition-colors duration-200;
+        letter-spacing: 0.01em;
+    }
+
+    .resource-card:hover .resource-title {
+        color: #000;
+    }
+
+    /* Resource Description */
+    .resource-description {
+        @apply text-sm text-gray-600 line-clamp-3;
+        line-height: 1.6;
+    }
+
+    /* Resource Tags */
+    .resource-tag {
+        @apply text-xs text-gray-500 transition-all duration-200;
+        cursor: pointer;
+    }
+
+    .resource-tag:hover {
+        @apply text-black;
+        text-decoration: underline;
+        text-underline-offset: 2px;
+    }
+
+    /* Card Arrow Icon */
+    .card-arrow {
+        @apply absolute top-6 right-6 text-gray-400 transition-all duration-300;
+        opacity: 0;
+        transform: translate(-8px, 0);
+    }
+
+    .resource-card:hover .card-arrow {
+        opacity: 1;
+        transform: translate(0, 0);
+    }
+
+    /* Premium Search Bar */
+    .premium-search {
+        @apply relative w-full max-w-2xl;
+    }
+
+    .premium-search input {
+        @apply w-full pl-12 pr-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 transition-all duration-200;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    .premium-search input:focus {
+        @apply border-black outline-none;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.05),
+            0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .premium-search .search-icon {
+        @apply absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors duration-200;
+    }
+
+    .premium-search input:focus~.search-icon {
+        @apply text-black;
+    }
+
+    /* Filter Pills */
+    .filter-pill {
+        @apply px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200;
+        border: 2px solid transparent;
+    }
+
+    .filter-pill:not(.active) {
+        @apply bg-white text-black border-gray-200;
+    }
+
+    .filter-pill:not(.active):hover {
+        @apply border-gray-300;
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .filter-pill.active {
+        @apply bg-black text-white border-black;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Header Blur */
+    .header-blur {
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        background: rgba(255, 255, 255, 0.9);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    /* Avatar Glow */
+    .avatar-glow {
+        @apply transition-all duration-300;
+    }
+
+    .avatar-glow:hover {
+        box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.1),
+            0 0 15px rgba(0, 0, 0, 0.3);
+        transform: scale(1.05);
+    }
+
+    /* Notification Bell */
+    .notification-bell {
+        @apply transition-transform duration-200;
+    }
+
+    .notification-bell:hover {
+        animation: bellBounce 0.5s ease-in-out;
+    }
+
+    /* Sidebar Brand */
+    .sidebar-brand {
+        @apply text-xl font-bold tracking-tight text-white transition-all duration-300;
+    }
+
+    .sidebar-brand:hover {
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        transform: scale(1.02);
+    }
+
+    /* Staggered Card Animation */
+    .card-stagger-1 {
+        animation: cardEntrance 0.5s ease-out 0s backwards;
+    }
+
+    .card-stagger-2 {
+        animation: cardEntrance 0.5s ease-out 0.1s backwards;
+    }
+
+    .card-stagger-3 {
+        animation: cardEntrance 0.5s ease-out 0.2s backwards;
+    }
+
+    .card-stagger-4 {
+        animation: cardEntrance 0.5s ease-out 0.3s backwards;
+    }
+
+    .card-stagger-5 {
+        animation: cardEntrance 0.5s ease-out 0.4s backwards;
+    }
+
+    .card-stagger-6 {
+        animation: cardEntrance 0.5s ease-out 0.5s backwards;
+    }
 }
+
+/* ============================================
+   DASHBOARD ANIMATIONS
+   ============================================ */
+
+/* Card Entrance Animation */
+@keyframes cardEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Bell Bounce Animation */
+@keyframes bellBounce {
+
+    0%,
+    100% {
+        transform: rotate(0deg);
+    }
+
+    10%,
+    30% {
+        transform: rotate(-10deg);
+    }
+
+    20%,
+    40% {
+        transform: rotate(10deg);
+    }
+
+    50% {
+        transform: rotate(-5deg);
+    }
+
+    60% {
+        transform: rotate(5deg);
+    }
+
+    70% {
+        transform: rotate(0deg);
+    }
+}
+
+/* Badge Pulse */
+@keyframes badgePulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
 
 /* ============================================
    UTILITY CLASSES

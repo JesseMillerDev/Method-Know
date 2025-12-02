@@ -6,40 +6,86 @@
 
 <PageTitle>Resources</PageTitle>
 
-<div class="mb-8">
-    <h1 class="text-3xl font-bold text-neutral-900">Resources</h1>
-    <p class="mt-2 text-neutral-500">A curated list of knowledge and tools.</p>
+<!-- Page Header -->
+<div class="mb-12 fade-in">
+    <h1 class="text-5xl font-bold text-black mb-3" style="letter-spacing: -0.02em;">Resources</h1>
+    <p class="text-lg text-gray-600 font-medium">A curated collection of knowledge and tools to accelerate your learning journey.</p>
 </div>
 
-<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-    @foreach (var resource in Resources)
-    {
-        <div class="group relative bg-white border border-neutral-200 rounded-lg p-6 hover:shadow-lg transition-shadow duration-200 cursor-pointer">
-            <div class="flex items-center justify-between mb-4">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-neutral-100 text-neutral-800">
-                    @resource.Category
-                </span>
-                <span class="text-neutral-400 group-hover:text-neutral-600 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
-                    </svg>
-                </span>
-            </div>
-            <h3 class="text-lg font-semibold text-neutral-900 group-hover:text-black mb-2">
-                @resource.Title
-            </h3>
-            <p class="text-sm text-neutral-500 line-clamp-3">
-                @resource.Description
-            </p>
-            <div class="mt-4 flex items-center gap-2">
-                @foreach (var tag in resource.Tags)
-                {
-                    <span class="text-xs text-neutral-400">#@tag</span>
-                }
-            </div>
+<!-- Search & Filter Bar -->
+<div class="mb-10 fade-in" style="animation-delay: 0.1s;">
+    <div class="flex flex-col md:flex-row gap-4 items-center">
+        <!-- Premium Search -->
+        <div class="premium-search flex-1">
+            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+            <input 
+                type="text" 
+                placeholder="Search resources..."
+                class="premium-input-search"
+            />
         </div>
+        
+        <!-- Filter Pills -->
+        <div class="flex gap-2">
+            <button class="filter-pill active">All</button>
+            <button class="filter-pill">Docs</button>
+            <button class="filter-pill">Tutorials</button>
+            <button class="filter-pill">Articles</button>
+        </div>
+    </div>
+</div>
+
+<!-- Premium Resource Grid with Staggered Animation -->
+<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    @{
+        var cardIndex = 1;
+        foreach (var resource in Resources)
+        {
+            var staggerClass = $"card-stagger-{cardIndex}";
+            <div class="resource-card @staggerClass group">
+                <!-- Category Badge -->
+                <div class="flex items-center justify-between mb-4">
+                    <span class="category-badge">
+                        @resource.Category
+                    </span>
+                    <!-- Arrow Icon -->
+                    <span class="card-arrow text-2xl">→</span>
+                </div>
+                
+                <!-- Resource Content -->
+                <h3 class="resource-title">
+                    @resource.Title
+                </h3>
+                <p class="resource-description mb-4">
+                    @resource.Description
+                </p>
+                
+                <!-- Tags -->
+                <div class="flex flex-wrap items-center gap-2">
+                    @foreach (var tag in resource.Tags)
+                    {
+                        <span class="resource-tag">#@tag</span>
+                    }
+                </div>
+            </div>
+            cardIndex++;
+        }
     }
 </div>
+
+<!-- Empty State (if needed) -->
+@if (!Resources.Any())
+{
+    <div class="text-center py-20 fade-in">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-20 h-20 mx-auto text-gray-300 mb-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+        </svg>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">No resources found</h3>
+        <p class="text-gray-500">Start by adding your first resource to your knowledge base.</p>
+    </div>
+}
 
 @code {
     private List<ResourceItem> Resources = new()
