@@ -55,7 +55,7 @@ jobs:
       # Deploy ONLY the static 'wwwroot' folder to Vercel
       - name: Deploy to Vercel
         working-directory: ${{ env.FRONTEND_PATH }}
-        run: vercel deploy ./release-output/wwwroot --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel deploy ./release-output/wwwroot --name method-know --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
