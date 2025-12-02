@@ -6,8 +6,8 @@ on:
 
 env:
   # 🔧 CONFIGURATION: Adjust these paths to match your folder structure
-  BACKEND_PATH: "./Know.ApiService" 
-  FRONTEND_PATH: "./Know.Web"
+  BACKEND_PATH: "Know.ApiService" 
+  FRONTEND_PATH: "Know.Web"
 
 jobs:
   # ------------------------------------------------------------------
