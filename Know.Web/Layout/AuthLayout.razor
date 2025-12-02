@@ -1,0 +1,42 @@
+@inherits LayoutComponentBase
+
+<div class="min-h-screen flex flex-col justify-center py-12 sm:px-6 lg:px-8 animated-background pattern-overlay relative overflow-hidden">
+    <!-- Floating Decorative Elements -->
+    <div class="absolute top-20 left-10 w-32 h-32 bg-black opacity-5 rounded-full floating blur-2xl"></div>
+    <div class="absolute bottom-32 right-20 w-40 h-40 bg-black opacity-5 rounded-full floating-delayed blur-3xl"></div>
+    <div class="absolute top-1/2 left-1/4 w-24 h-24 bg-gray-900 opacity-5 rotate-45 floating" style="animation-delay: 0.5s;"></div>
+    
+    <div class="sm:mx-auto sm:w-full sm:max-w-md relative z-10 fade-in">
+        <!-- Logo -->
+        <div class="flex justify-center mb-6">
+            <div class="h-16 w-16 bg-black rounded-2xl flex items-center justify-center shadow-2xl transform hover:scale-110 hover:rotate-3 transition-all duration-300 relative group">
+                <!-- Glow effect on hover -->
+                <div class="absolute inset-0 bg-black rounded-2xl blur-xl opacity-0 group-hover:opacity-50 transition-opacity duration-300"></div>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-9 h-9 text-white relative z-10 transition-transform duration-300 group-hover:scale-110">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+                </svg>
+            </div>
+        </div>
+        
+        <!-- App Name -->
+        <h2 class="text-center text-4xl font-bold tracking-tight text-black mb-2" style="letter-spacing: 0.02em;">
+            METHOD KNOW
+        </h2>
+        <p class="text-center text-sm text-gray-600 mb-10 font-medium">
+            Your personal knowledge base
+        </p>
+    </div>
+
+    <div class="sm:mx-auto sm:w-full sm:max-w-[480px] relative z-10">
+        <div class="glass-card py-10 px-6 sm:rounded-3xl sm:px-12 fade-in" style="animation-delay: 0.1s;">
+            @Body
+        </div>
+        
+        <!-- Footer -->
+        <div class="mt-8 text-center fade-in" style="animation-delay: 0.2s;">
+            <p class="text-xs text-gray-500 font-medium">
+                &copy; @DateTime.Now.Year Method Know. All rights reserved.
+            </p>
+        </div>
+    </div>
+</div>

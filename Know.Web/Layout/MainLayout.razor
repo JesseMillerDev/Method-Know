@@ -24,15 +24,23 @@
             </div>
             <div class="flex-1"></div> <!-- Spacer -->
             <div class="flex items-center gap-4">
-                <button class="p-2 text-neutral-500 hover:text-neutral-900 transition-colors rounded-full hover:bg-neutral-100">
-                    <span class="sr-only">Notifications</span>
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                    </svg>
-                </button>
-                <div class="h-8 w-8 rounded-full bg-neutral-900 text-white flex items-center justify-center font-medium text-sm">
-                    JM
-                </div>
+                <AuthorizeView>
+                    <Authorized>
+                        <button class="p-2 text-neutral-500 hover:text-neutral-900 transition-colors rounded-full hover:bg-neutral-100">
+                            <span class="sr-only">Notifications</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                            </svg>
+                        </button>
+                        <div class="h-8 w-8 rounded-full bg-neutral-900 text-white flex items-center justify-center font-medium text-sm">
+                            JM
+                        </div>
+                        <button @onclick="Logout" class="text-sm font-semibold leading-6 text-gray-900">Log out</button>
+                    </Authorized>
+                    <NotAuthorized>
+                        <a href="login" class="text-sm font-semibold leading-6 text-gray-900">Log in <span aria-hidden="true">&rarr;</span></a>
+                    </NotAuthorized>
+                </AuthorizeView>
             </div>
         </header>
 
@@ -44,3 +52,16 @@
         </main>
     </div>
 </div>
+
+@code {
+    [Inject] AuthenticationStateProvider AuthStateProvider { get; set; } = default!;
+    [Inject] NavigationManager Navigation { get; set; } = default!;
+    [Inject] Blazored.LocalStorage.ILocalStorageService LocalStorage { get; set; } = default!;
+
+    private async Task Logout()
+    {
+        await LocalStorage.RemoveItemAsync("authToken");
+        ((Know.Web.Auth.CustomAuthStateProvider)AuthStateProvider).MarkUserAsLoggedOut();
+        Navigation.NavigateTo("/");
+    }
+}

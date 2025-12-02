@@ -12,8 +12,8 @@ public static class DatabaseInitializer
         var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var logger = scope.ServiceProvider.GetRequiredService<ILogger<AppDbContext>>();
 
-        // Step A: Apply Migrations
-        await dbContext.Database.MigrateAsync();
+        // Step A: Ensure Database Created (Dev Mode)
+        await dbContext.Database.EnsureCreatedAsync();
 
         // Step B: Load Vector Extension
         var connection = (SqliteConnection)dbContext.Database.GetDbConnection();
