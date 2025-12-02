@@ -11,3 +11,7 @@ obj/
 wwwroot/_framework/
 appsettings.Development.json
 secrets.json
+
+# Node
+node_modules/
+npm-debug.log

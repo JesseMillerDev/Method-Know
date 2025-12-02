@@ -1,0 +1,6 @@
+@Know.ApiService_HostAddress = http://localhost:5191
+
+GET {{Know.ApiService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
