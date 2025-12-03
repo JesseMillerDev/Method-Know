@@ -13,5 +13,7 @@ public class ArticleVote
     [Required]
     public string UserId { get; set; } = string.Empty;
 
+    public int VoteValue { get; set; } // 1 for Upvote, -1 for Downvote
+
     public DateTime VotedAt { get; set; } = DateTime.UtcNow;
 }

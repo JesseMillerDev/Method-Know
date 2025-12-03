@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -136,12 +137,15 @@ app.MapGet("/api/articles", async (VectorDbService vectorService, HttpContext ht
 .WithName("GetAllArticles")
 .RequireAuthorization();
 
-app.MapPost("/api/articles/{id}/vote", async (int id, VectorDbService vectorService, HttpContext httpContext) =>
+app.MapPost("/api/articles/{id}/vote", async (int id, int? voteValue, VectorDbService vectorService, HttpContext httpContext) =>
 {
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
     
-    var success = await vectorService.ToggleVoteAsync(id, userId);
+    // Default to Upvote (1) if not specified, for backward compatibility or simple calls
+    int val = voteValue ?? 1;
+    
+    var success = await vectorService.VoteAsync(id, userId, val);
     if (!success) return Results.NotFound();
     
     return Results.Ok();

@@ -32,15 +32,15 @@ public static class DatabaseInitializer
                 );");
 
             // 2. Add VoteCount to Articles if missing
-            // SQLite doesn't support IF NOT EXISTS for columns easily, so we try/catch
-            try 
-            {
-                await connection.ExecuteAsync(@"ALTER TABLE ""Articles"" ADD COLUMN ""VoteCount"" INTEGER NOT NULL DEFAULT 0;");
-            } 
-            catch (SqliteException) 
-            { 
-                // Ignore if column likely exists
-            }
+            try { await connection.ExecuteAsync(@"ALTER TABLE ""Articles"" ADD COLUMN ""VoteCount"" INTEGER NOT NULL DEFAULT 0;"); } catch (SqliteException) {}
+
+            // 3. Add Score, Upvotes, Downvotes to Articles
+            try { await connection.ExecuteAsync(@"ALTER TABLE ""Articles"" ADD COLUMN ""Score"" INTEGER NOT NULL DEFAULT 0;"); } catch (SqliteException) {}
+            try { await connection.ExecuteAsync(@"ALTER TABLE ""Articles"" ADD COLUMN ""Upvotes"" INTEGER NOT NULL DEFAULT 0;"); } catch (SqliteException) {}
+            try { await connection.ExecuteAsync(@"ALTER TABLE ""Articles"" ADD COLUMN ""Downvotes"" INTEGER NOT NULL DEFAULT 0;"); } catch (SqliteException) {}
+
+            // 4. Add VoteValue to ArticleVotes
+            try { await connection.ExecuteAsync(@"ALTER TABLE ""ArticleVotes"" ADD COLUMN ""VoteValue"" INTEGER NOT NULL DEFAULT 0;"); } catch (SqliteException) {}
         }
         catch (Exception ex)
         {

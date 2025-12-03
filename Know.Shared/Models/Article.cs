@@ -21,7 +21,14 @@ public class Article
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public int VoteCount { get; set; }
+    
+    public int Score { get; set; }
+    public int Upvotes { get; set; }
+    public int Downvotes { get; set; }
 
     [NotMapped]
     public bool IsVoted { get; set; }
+
+    [NotMapped]
+    public int UserVoteValue { get; set; } // 0 = None, 1 = Up, -1 = Down
 }
