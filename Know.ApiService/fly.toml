@@ -15,5 +15,5 @@ primary_region = "sjc"
   cpus = 1
 
 [mounts]
-  source = "knowledge_data"
+  source = "vol_vgjdgwpwk0jqxl8v"
   destination = "/data"
