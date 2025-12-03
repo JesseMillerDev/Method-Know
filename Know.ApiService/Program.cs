@@ -115,7 +115,8 @@ app.MapPost("/api/articles", async (Article article, VectorDbService vectorServi
     var createdArticle = await vectorService.CreateArticleAsync(article, vector);
     return Results.Created($"/api/articles/{createdArticle.Id}", createdArticle);
 })
-.WithName("CreateArticle");
+.WithName("CreateArticle")
+.RequireAuthorization();
 
 app.MapGet("/api/search", async ([FromQuery] string query, VectorDbService vectorService) =>
 {

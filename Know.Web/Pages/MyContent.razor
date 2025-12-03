@@ -10,9 +10,19 @@
 <PageTitle>My Content</PageTitle>
 
 <!-- Page Header -->
-<div class="mb-12 fade-in">
-    <h1 class="text-5xl font-bold text-black mb-3" style="letter-spacing: -0.02em;">My Content</h1>
-    <p class="text-lg text-gray-600 font-medium">View and manage all the articles you've uploaded to your knowledge base.</p>
+<div class="mb-12 fade-in flex items-end justify-between">
+    <div>
+        <h1 class="text-5xl font-bold text-black mb-3" style="letter-spacing: -0.02em;">My Content</h1>
+        <p class="text-lg text-gray-600 font-medium">View and manage all the articles you've uploaded to your knowledge base.</p>
+    </div>
+    
+    <!-- Add Resource Button -->
+    <button @onclick="OpenModal" class="premium-button flex items-center gap-2" style="width: auto;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        <span>Add Resource</span>
+    </button>
 </div>
 
 <!-- Search & Filter Bar -->
@@ -120,12 +130,142 @@ else
     </div>
 }
 
+<!-- Slide-out Modal -->
+@if (showModal)
+{
+    <!-- Backdrop -->
+    <div class="modal-backdrop" @onclick="CloseModal"></div>
+    
+    <!-- Modal Panel -->
+    <div class="modal-panel @(isClosing ? "closing" : "")">
+        <!-- Header -->
+        <div class="modal-header">
+            <h2 class="modal-title">Add New Resource</h2>
+            <button @onclick="CloseModal" class="modal-close">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Body -->
+        <div class="modal-body">
+            <form @onsubmit="SubmitArticle">
+                <!-- Title Field -->
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-black mb-2">
+                        Title <span class="text-red-500">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        @bind="newArticle.Title"
+                        placeholder="Enter article title..."
+                        class="premium-input"
+                        required
+                    />
+                    @if (showValidation && string.IsNullOrWhiteSpace(newArticle.Title))
+                    {
+                        <p class="validation-message error">Title is required</p>
+                    }
+                </div>
+                
+                <!-- Category Field -->
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-black mb-2">
+                        Category <span class="text-red-500">*</span>
+                    </label>
+                    <select @bind="newArticle.Category" class="premium-select" required>
+                        <option value="">Select a category...</option>
+                        <option value="Documentation">Documentation</option>
+                        <option value="Tutorials">Tutorials</option>
+                        <option value="Articles">Articles</option>
+                    </select>
+                    @if (showValidation && string.IsNullOrWhiteSpace(newArticle.Category))
+                    {
+                        <p class="validation-message error">Category is required</p>
+                    }
+                </div>
+                
+                <!-- Content Field -->
+                <div class="mb-6">
+                    <label class="block text-sm font-semibold text-black mb-2">
+                        Content <span class="text-red-500">*</span>
+                    </label>
+                    <textarea 
+                        @bind="newArticle.Content"
+                        placeholder="Enter your content here..."
+                        class="premium-textarea"
+                        rows="10"
+                        required
+                    ></textarea>
+                    @if (showValidation && string.IsNullOrWhiteSpace(newArticle.Content))
+                    {
+                        <p class="validation-message error">Content is required</p>
+                    }
+                </div>
+            </form>
+        </div>
+        
+        <!-- Footer -->
+        <div class="modal-footer">
+            <button type="button" @onclick="CloseModal" class="secondary-button" disabled="@isSubmitting">
+                Cancel
+            </button>
+            <button type="submit" @onclick="SubmitArticle" class="premium-button flex items-center gap-2" disabled="@isSubmitting">
+                @if (isSubmitting)
+                {
+                    <div class="spinner"></div>
+                    <span>Creating...</span>
+                }
+                else
+                {
+                    <span>Create Resource</span>
+                }
+            </button>
+        </div>
+    </div>
+}
+
+<!-- Toast Notifications -->
+@if (showToast)
+{
+    <div class="toast-notification @toastType">
+        <div class="toast-icon">
+            @if (toastType == "success")
+            {
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            }
+            else
+            {
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+            }
+        </div>
+        <div class="toast-message">@toastMessage</div>
+    </div>
+}
+
 @code {
     private List<Article> articles = new();
     private bool isLoading = true;
     private string searchQuery = "";
     private string selectedCategory = "All";
     private string? userId;
+    
+    // Modal state
+    private bool showModal = false;
+    private bool isClosing = false;
+    private bool isSubmitting = false;
+    private bool showValidation = false;
+    private Article newArticle = new();
+    
+    // Toast state
+    private bool showToast = false;
+    private string toastType = "";
+    private string toastMessage = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -152,7 +292,7 @@ else
                     }
                     
                     // Fetch user's articles
-                    var apiUrl = $"https://localhost:7208/api/users/{userId}/articles";
+                    var apiUrl = $"/api/users/{userId}/articles";
                     articles = await Http.GetFromJsonAsync<List<Article>>(apiUrl) ?? new();
                 }
             }
@@ -224,6 +364,91 @@ else
             return $"{(int)(timeSpan.TotalDays / 7)} weeks ago";
         else
             return date.ToString("MMM dd, yyyy");
+    }
+
+    private void OpenModal()
+    {
+        newArticle = new Article();
+        showValidation = false;
+        showModal = true;
+        isClosing = false;
+    }
+
+    private async void CloseModal()
+    {
+        isClosing = true;
+        StateHasChanged();
+        await Task.Delay(300); // Wait for animation
+        showModal = false;
+        isClosing = false;
+        StateHasChanged();
+    }
+
+    private async Task SubmitArticle()
+    {
+        showValidation = true;
+        
+        // Validate form
+        if (string.IsNullOrWhiteSpace(newArticle.Title) || 
+            string.IsNullOrWhiteSpace(newArticle.Content) || 
+            string.IsNullOrWhiteSpace(newArticle.Category))
+        {
+            return;
+        }
+        
+        isSubmitting = true;
+        StateHasChanged();
+        
+        try
+        {
+            // Set userId for the new article
+            newArticle.UserId = userId ?? "";
+            newArticle.CreatedAt = DateTime.UtcNow;
+            
+            // Post to API
+            var response = await Http.PostAsJsonAsync("/api/articles", newArticle);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var createdArticle = await response.Content.ReadFromJsonAsync<Article>();
+                if (createdArticle != null)
+                {
+                    articles.Insert(0, createdArticle);
+                }
+                
+                // Show success toast
+                ShowToast("success", "Resource created successfully!");
+                
+                // Close modal
+                CloseModal();
+            }
+            else
+            {
+                ShowToast("error", "Failed to create resource. Please try again.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating article: {ex.Message}");
+            ShowToast("error", "An error occurred. Please try again.");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async void ShowToast(string type, string message)
+    {
+        toastType = type;
+        toastMessage = message;
+        showToast = true;
+        StateHasChanged();
+        
+        await Task.Delay(3000);
+        showToast = false;
+        StateHasChanged();
     }
 
     private void ViewArticle(int articleId)
