@@ -1,0 +1,107 @@
+@using Know.Web.Models
+
+@if (!Articles.Any())
+{
+    <!-- Empty State -->
+    <div class="text-center py-20 fade-in">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-20 h-20 mx-auto text-gray-300 mb-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+        </svg>
+        <h3 class="text-xl font-semibold text-gray-900 mb-2">
+            @if (!string.IsNullOrWhiteSpace(SearchQuery) || SelectedCategory != "All")
+            {
+                <text>No matching resources found</text>
+            }
+            else
+            {
+                <text>No resources yet</text>
+            }
+        </h3>
+        <p class="text-gray-500">
+            @if (!string.IsNullOrWhiteSpace(SearchQuery) || SelectedCategory != "All")
+            {
+                <text>Try adjusting your search or filters.</text>
+            }
+            else
+            {
+                <text>@EmptyStateMessage</text>
+            }
+        </p>
+    </div>
+}
+else
+{
+    <!-- Premium Resource Grid with Staggered Animation -->
+    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        @{
+            var cardIndex = 1;
+            foreach (var article in Articles)
+            {
+                var staggerClass = $"card-stagger-{Math.Min(cardIndex, 6)}";
+                <div class="resource-card @staggerClass group" @onclick="() => OnViewArticle.InvokeAsync(article.Id)">
+                    <!-- Category Badge & Date -->
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="category-badge">
+                            @(string.IsNullOrWhiteSpace(article.Category) ? "Uncategorized" : article.Category)
+                        </span>
+                        <!-- Arrow Icon -->
+                        <span class="card-arrow text-2xl">→</span>
+                    </div>
+                    
+                    <!-- Article Content -->
+                    <h3 class="resource-title">
+                        @article.Title
+                    </h3>
+                    <p class="resource-description mb-4">
+                        @GetContentPreview(article.Content)
+                    </p>
+                    
+                    <!-- Date & Metadata -->
+                    <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                        </svg>
+                        <span class="resource-tag">@FormatDate(article.CreatedAt)</span>
+                    </div>
+                </div>
+                cardIndex++;
+            }
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public IEnumerable<Article> Articles { get; set; } = Enumerable.Empty<Article>();
+    [Parameter] public string SearchQuery { get; set; } = "";
+    [Parameter] public string SelectedCategory { get; set; } = "All";
+    [Parameter] public string EmptyStateMessage { get; set; } = "Be the first to share knowledge with the community!";
+    [Parameter] public EventCallback<int> OnViewArticle { get; set; }
+
+    private string GetContentPreview(string content)
+    {
+        const int maxLength = 150;
+        if (string.IsNullOrEmpty(content))
+            return "No content available";
+            
+        if (content.Length <= maxLength)
+            return content;
+            
+        return content.Substring(0, maxLength) + "...";
+    }
+
+    private string FormatDate(DateTime date)
+    {
+        var timeSpan = DateTime.UtcNow - date;
+        
+        if (timeSpan.TotalDays < 1)
+            return "Today";
+        else if (timeSpan.TotalDays < 2)
+            return "Yesterday";
+        else if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays} days ago";
+        else if (timeSpan.TotalDays < 30)
+            return $"{(int)(timeSpan.TotalDays / 7)} weeks ago";
+        else
+            return date.ToString("MMM dd, yyyy");
+    }
+}

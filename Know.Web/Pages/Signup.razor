@@ -30,51 +30,31 @@
 
       <div class="space-y-5">
         <!-- Email Field -->
-        <div>
-          <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-2">Email address</label>
-          <div class="relative">
-            <InputText 
-              id="email" 
-              @bind-Value="signupModel.Email" 
-              placeholder="you@example.com"
-              class="premium-input" 
-              disabled="@isLoading" />
-          </div>
-          <ValidationMessage For="@(() => signupModel.Email)" class="validation-message" />
-        </div>
+        <AuthInput 
+            Id="email"
+            Label="Email address"
+            @bind-Value="signupModel.Email"
+            Placeholder="you@example.com"
+            Disabled="@isLoading"
+        />
 
         <!-- Password Field -->
-        <div>
-          <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-2">Password</label>
-          <div class="relative">
-            <InputText 
-              type="password" 
-              id="password" 
-              @bind-Value="signupModel.Password" 
-              placeholder="Create a strong password"
-              class="premium-input"
-              disabled="@isLoading" />
-          </div>
-          <ValidationMessage For="@(() => signupModel.Password)" class="validation-message" />
-        </div>
+        <AuthInput 
+            Id="password"
+            Label="Password"
+            Type="password"
+            @bind-Value="signupModel.Password"
+            Placeholder="Create a strong password"
+            Disabled="@isLoading"
+        />
       </div>
 
       <!-- Sign Up Button -->
-      <div class="pt-2">
-        <button type="submit" class="premium-button" disabled="@isLoading">
-          @if (isLoading)
-          {
-            <span class="flex items-center justify-center gap-2">
-              <span class="spinner"></span>
-              <span>Creating account...</span>
-            </span>
-          }
-          else
-          {
-            <span>Sign up</span>
-          }
-        </button>
-      </div>
+      <AuthButton 
+          Text="Sign up"
+          LoadingText="Creating account..."
+          IsLoading="@isLoading"
+      />
     </EditForm>
 
     <!-- Login Link -->

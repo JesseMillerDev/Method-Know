@@ -1,0 +1,12 @@
+@if (IsVisible)
+{
+    <div class="text-center py-20 fade-in">
+        <div class="spinner mx-auto mb-4" style="width: 3rem; height: 3rem; border-width: 4px; border-color: #000; border-top-color: transparent;"></div>
+        <p class="text-gray-600 font-medium">@Message</p>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; } = true;
+    [Parameter] public string Message { get; set; } = "Loading...";
+}

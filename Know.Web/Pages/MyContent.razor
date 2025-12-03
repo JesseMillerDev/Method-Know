@@ -28,108 +28,28 @@
 </div>
 
 <!-- Search & Filter Bar -->
-<div class="mb-10 fade-in" style="animation-delay: 0.1s;">
-    <div class="flex flex-col md:flex-row gap-4 items-center">
-        <!-- Premium Search -->
-        <div class="premium-search flex-1">
-            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-            <input 
-                type="text" 
-                placeholder="Search your content..."
-                class="premium-input-search"
-                @bind="searchQuery"
-                @bind:event="oninput"
-            />
-        </div>
-        
-        <!-- Filter Pills -->
-        <div class="flex gap-2">
-            <button class="filter-pill @(selectedCategory == "All" ? "active" : "")" @onclick='() => FilterByCategory("All")'>All</button>
-            <button class="filter-pill @(selectedCategory == "Documentation" ? "active" : "")" @onclick='() => FilterByCategory("Documentation")'>Docs</button>
-            <button class="filter-pill @(selectedCategory == "Tutorials" ? "active" : "")" @onclick='() => FilterByCategory("Tutorials")'>Tutorials</button>
-            <button class="filter-pill @(selectedCategory == "Articles" ? "active" : "")" @onclick='() => FilterByCategory("Articles")'>Articles</button>
-        </div>
-    </div>
-</div>
+<SearchFilterBar 
+    SearchQuery="@searchQuery" 
+    SelectedCategory="@selectedCategory"
+    Placeholder="Search your content..."
+    SearchQueryChanged="@(s => searchQuery = s)"
+    OnCategoryChanged="FilterByCategory"
+/>
 
-<!-- Loading State -->
+<!-- Loading State & Grid -->
 @if (isLoading)
 {
-    <div class="text-center py-20 fade-in">
-        <div class="spinner mx-auto mb-4" style="width: 3rem; height: 3rem; border-width: 4px; border-color: #000; border-top-color: transparent;"></div>
-        <p class="text-gray-600 font-medium">Loading your content...</p>
-    </div>
-}
-else if (!FilteredArticles.Any())
-{
-    <!-- Empty State -->
-    <div class="text-center py-20 fade-in">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-20 h-20 mx-auto text-gray-300 mb-4">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-        </svg>
-        <h3 class="text-xl font-semibold text-gray-900 mb-2">
-            @if (!string.IsNullOrWhiteSpace(searchQuery) || selectedCategory != "All")
-            {
-                <text>No matching content found</text>
-            }
-            else
-            {
-                <text>No content yet</text>
-            }
-        </h3>
-        <p class="text-gray-500">
-            @if (!string.IsNullOrWhiteSpace(searchQuery) || selectedCategory != "All")
-            {
-                <text>Try adjusting your search or filters.</text>
-            }
-            else
-            {
-                <text>Start by uploading your first article to your knowledge base.</text>
-            }
-        </p>
-    </div>
+    <LoadingSpinner Message="Loading your content..." />
 }
 else
 {
-    <!-- Premium Article Grid with Staggered Animation -->
-    <div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        @{
-            var cardIndex = 1;
-            foreach (var article in FilteredArticles)
-            {
-                var staggerClass = $"card-stagger-{Math.Min(cardIndex, 6)}";
-                <div class="resource-card @staggerClass group" @onclick="() => ViewArticle(article.Id)">
-                    <!-- Category Badge & Date -->
-                    <div class="flex items-center justify-between mb-4">
-                        <span class="category-badge">
-                            @(string.IsNullOrWhiteSpace(article.Category) ? "Uncategorized" : article.Category)
-                        </span>
-                        <!-- Arrow Icon -->
-                        <span class="card-arrow text-2xl">→</span>
-                    </div>
-                    
-                    <!-- Article Content -->
-                    <h3 class="resource-title">
-                        @article.Title
-                    </h3>
-                    <p class="resource-description mb-4">
-                        @GetContentPreview(article.Content)
-                    </p>
-                    
-                    <!-- Date & Metadata -->
-                    <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
-                        </svg>
-                        <span class="resource-tag">@FormatDate(article.CreatedAt)</span>
-                    </div>
-                </div>
-                cardIndex++;
-            }
-        }
-    </div>
+    <ResourceGrid 
+        Articles="@FilteredArticles"
+        SearchQuery="@searchQuery"
+        SelectedCategory="@selectedCategory"
+        EmptyStateMessage="Start by uploading your first article to your knowledge base."
+        OnViewArticle="ViewArticle"
+    />
 }
 
 <!-- Resource Modal Component -->

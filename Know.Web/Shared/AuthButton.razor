@@ -1,0 +1,21 @@
+<div class="pt-2">
+    <button type="submit" class="premium-button" disabled="@IsLoading">
+        @if (IsLoading)
+        {
+            <span class="flex items-center justify-center gap-2">
+                <span class="spinner"></span>
+                <span>@LoadingText</span>
+            </span>
+        }
+        else
+        {
+            <span>@Text</span>
+        }
+    </button>
+</div>
+
+@code {
+    [Parameter] public bool IsLoading { get; set; } = false;
+    [Parameter] public string LoadingText { get; set; } = "Loading...";
+    [Parameter] public string Text { get; set; } = "Submit";
+}

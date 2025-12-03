@@ -1,0 +1,28 @@
+@using System.Linq.Expressions
+
+<div>
+    <label for="@Id" class="block text-xs font-semibold uppercase tracking-wider text-gray-700 mb-2">@Label</label>
+    <div class="relative">
+        <InputText 
+            id="@Id" 
+            type="@Type"
+            Value="@Value" 
+            ValueChanged="@ValueChanged" 
+            ValueExpression="@ValueExpression"
+            placeholder="@Placeholder"
+            class="premium-input" 
+            disabled="@Disabled" />
+    </div>
+    <ValidationMessage For="@ValueExpression" class="validation-message" />
+</div>
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Type { get; set; } = "text";
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public Expression<Func<string>> ValueExpression { get; set; } = default!;
+    [Parameter] public string Placeholder { get; set; } = "";
+    [Parameter] public bool Disabled { get; set; } = false;
+}
