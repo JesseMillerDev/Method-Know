@@ -49,7 +49,12 @@ public class CustomAuthStateProvider : AuthenticationStateProvider
         var jsonBytes = ParseBase64WithoutPadding(payload);
         var keyValuePairs = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonBytes);
 
-        return keyValuePairs.Select(kvp => new Claim(kvp.Key, kvp.Value.ToString()));
+        if (keyValuePairs == null)
+        {
+            return Enumerable.Empty<Claim>();
+        }
+
+        return keyValuePairs.Select(kvp => new Claim(kvp.Key, kvp.Value?.ToString() ?? ""));
     }
 
     private byte[] ParseBase64WithoutPadding(string base64)

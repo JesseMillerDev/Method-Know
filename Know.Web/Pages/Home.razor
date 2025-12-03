@@ -7,6 +7,7 @@
 @inject HttpClient Http
 @inject AuthenticationStateProvider AuthStateProvider
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
 
 <PageTitle>Resources</PageTitle>
 
@@ -68,6 +69,10 @@ else
     private bool isLoading = true;
     private string searchQuery = "";
     private string selectedCategory = "All";
+    
+    [SupplyParameterFromQuery]
+    public string? Category { get; set; }
+
     private string? userId;
     
     // Modal state
@@ -111,6 +116,18 @@ else
         }
     }
 
+    protected override void OnParametersSet()
+    {
+        if (!string.IsNullOrEmpty(Category))
+        {
+            selectedCategory = Category;
+        }
+        else
+        {
+            selectedCategory = "All";
+        }
+    }
+
     private IEnumerable<Article> FilteredArticles
     {
         get
@@ -139,6 +156,7 @@ else
     private void FilterByCategory(string category)
     {
         selectedCategory = category;
+        Navigation.NavigateTo(category == "All" ? "/" : $"/?category={category}");
     }
 
     private string GetContentPreview(string content)
