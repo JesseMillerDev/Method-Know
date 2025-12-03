@@ -1,5 +1,5 @@
 app = "method-know"
-primary_region = "sjc"
+primary_region = "ewr"
 
 [http_service]
   internal_port = 8080
