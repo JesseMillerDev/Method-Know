@@ -13,3 +13,7 @@ primary_region = "sjc"
   memory = "1gb"
   cpu_kind = "shared"
   cpus = 1
+
+[mounts]
+  source = "knowledge_data"
+  destination = "/data"

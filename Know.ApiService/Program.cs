@@ -15,8 +15,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // Register DbContext
+var dbPath = "know.db";
+if (Directory.Exists("/data"))
+{
+    dbPath = "/data/know.db";
+}
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=know.db"));
+    options.UseSqlite($"Data Source={dbPath}"));
 
 // Register Vector Service
 builder.Services.AddScoped<VectorDbService>();
