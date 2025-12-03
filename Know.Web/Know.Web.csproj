@@ -13,6 +13,10 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="9.0.3" PrivateAssets="all" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Know.Shared\Know.Shared.csproj" />
+  </ItemGroup>
+
   <Target Name="TailwindBuild" BeforeTargets="Build">
     <Exec Command="npm install" Condition="!Exists('node_modules') AND Exists('package.json')" />
     <Exec Command="npm run build:css" Condition="Exists('package.json')" />

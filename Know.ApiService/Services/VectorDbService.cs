@@ -1,5 +1,6 @@
 using Dapper;
 using Know.ApiService.Data;
+using Know.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Know.ApiService.Services;

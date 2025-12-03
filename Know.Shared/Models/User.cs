@@ -1,4 +1,4 @@
-namespace Know.ApiService.Data;
+namespace Know.Shared.Models;
 
 public class User
 {

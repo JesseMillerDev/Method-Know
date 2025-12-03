@@ -1,4 +1,5 @@
 using Know.ApiService.Data;
+using Know.Shared.Models;
 using Know.ApiService.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;

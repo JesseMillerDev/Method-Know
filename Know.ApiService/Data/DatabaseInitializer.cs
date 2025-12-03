@@ -1,6 +1,7 @@
 using Dapper;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Know.Shared.Models;
 
 namespace Know.ApiService.Data;
 

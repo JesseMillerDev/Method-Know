@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Know.Shared.Models;
 
 namespace Know.ApiService.Data;
 

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using BCrypt.Net;
 using Know.ApiService.Data;
+using Know.Shared.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
