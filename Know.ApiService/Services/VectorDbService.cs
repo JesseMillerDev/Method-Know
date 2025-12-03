@@ -40,10 +40,19 @@ public class VectorDbService
             // But since we are in a scoped service, we can just try loading it.
             
             // A better approach for production is a DbConnectionInterceptor, but for now:
-             try { ((Microsoft.Data.Sqlite.SqliteConnection)connection).LoadExtension("vec0"); } catch {}
+             try 
+             { 
+                 var extensionPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Libs", "vec0.dylib");
+                 ((Microsoft.Data.Sqlite.SqliteConnection)connection).LoadExtension(extensionPath); 
+             } catch {}
+
+            // Convert float[] to byte[] for sqlite-vec
+            var vectorBytes = new byte[vector.Length * sizeof(float)];
+            Buffer.BlockCopy(vector, 0, vectorBytes, 0, vectorBytes.Length);
 
             var sql = "INSERT INTO vec_articles(article_id, embedding) VALUES (@Id, @Vector)";
-            await connection.ExecuteAsync(sql, new { Id = article.Id, Vector = vector });
+            var rows = await connection.ExecuteAsync(sql, new { Id = article.Id, Vector = vectorBytes });
+            _logger.LogInformation("Inserted vector for article {Id}. Rows affected: {Rows}", article.Id, rows);
         }
         catch (Exception ex)
         {
@@ -63,7 +72,19 @@ public class VectorDbService
             await connection.OpenAsync();
         }
         
-        try { ((Microsoft.Data.Sqlite.SqliteConnection)connection).LoadExtension("vec0"); } catch {}
+        try 
+        { 
+            var extensionPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Libs", "vec0.dylib");
+            ((Microsoft.Data.Sqlite.SqliteConnection)connection).LoadExtension(extensionPath); 
+        } 
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load vec0 extension.");
+        }
+
+        // Convert float[] to byte[] for sqlite-vec
+        var queryVectorBytes = new byte[queryVector.Length * sizeof(float)];
+        Buffer.BlockCopy(queryVector, 0, queryVectorBytes, 0, queryVectorBytes.Length);
 
         var sql = @"
             SELECT a.* 
@@ -75,7 +96,7 @@ public class VectorDbService
 
         try 
         {
-            var results = await connection.QueryAsync<Article>(sql, new { Vector = queryVector, Limit = limit });
+            var results = await connection.QueryAsync<Article>(sql, new { Vector = queryVectorBytes, Limit = limit });
             return results;
         }
         catch (Exception ex)

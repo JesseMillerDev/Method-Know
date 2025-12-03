@@ -23,6 +23,9 @@ builder.Services.AddScoped<VectorDbService>();
 // Register Auth Service
 builder.Services.AddScoped<AuthService>();
 
+// Register Embedding Service
+builder.Services.AddSingleton<OnnxEmbeddingService>();
+
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_that_should_be_in_env_vars_and_long_enough";
 builder.Services.AddAuthentication(options =>
@@ -73,18 +76,6 @@ app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Helper for mock embeddings
-float[] GenerateMockEmbedding()
-{
-    var random = new Random();
-    var embedding = new float[384];
-    for (int i = 0; i < 384; i++)
-    {
-        embedding[i] = (float)(random.NextDouble() * 2 - 1);
-    }
-    return embedding;
-}
-
 // Auth Endpoints
 app.MapPost("/api/auth/signup", async (AuthService authService, [FromBody] LoginRequest request) =>
 {
@@ -109,18 +100,21 @@ app.MapPost("/api/auth/login", async (AuthService authService, [FromBody] LoginR
 .WithName("Login");
 
 // Endpoints
-app.MapPost("/api/articles", async (Article article, VectorDbService vectorService) =>
+app.MapPost("/api/articles", async (Article article, VectorDbService vectorService, OnnxEmbeddingService embeddingService) =>
 {
-    var vector = GenerateMockEmbedding();
+    // Generate real embedding from article content (combining Title and Content)
+    var textToEmbed = $"{article.Title} {article.Content}";
+    var vector = await embeddingService.GenerateEmbeddingAsync(textToEmbed);
+    
     var createdArticle = await vectorService.CreateArticleAsync(article, vector);
     return Results.Created($"/api/articles/{createdArticle.Id}", createdArticle);
 })
 .WithName("CreateArticle")
 .RequireAuthorization();
 
-app.MapGet("/api/search", async ([FromQuery] string query, VectorDbService vectorService) =>
+app.MapGet("/api/search", async ([FromQuery] string query, VectorDbService vectorService, OnnxEmbeddingService embeddingService) =>
 {
-    var queryVector = GenerateMockEmbedding(); // Mocking the embedding of the query string
+    var queryVector = await embeddingService.GenerateEmbeddingAsync(query);
     var results = await vectorService.SearchAsync(queryVector, 5);
     return Results.Ok(results);
 })

@@ -27,7 +27,9 @@ public static class DatabaseInitializer
             // The file name might be different depending on OS (e.g. vec0.dll, libvec0.so, vec0.dylib)
             // but LoadExtension usually takes the name.
             // If this fails, it means the extension binary is not found in the path.
-            connection.LoadExtension("vec0");
+            // Try to load the extension using absolute path
+            var extensionPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Libs", "vec0.dylib");
+            connection.LoadExtension(extensionPath);
             logger.LogInformation("Successfully loaded 'vec0' extension.");
         }
         catch (Exception ex)
