@@ -16,7 +16,7 @@ public static class DatabaseInitializer
         // Step A: Ensure Database Created (Dev Mode)
         await dbContext.Database.EnsureCreatedAsync();
 
-        // Manual Schema Update for Upvotes (Poor man's migration)
+        // Manual Schema Update for Upvotes & Profile (Poor man's migration fallback)
         var connection = (SqliteConnection)dbContext.Database.GetDbConnection();
         if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
 
@@ -41,10 +41,15 @@ public static class DatabaseInitializer
 
             // 4. Add VoteValue to ArticleVotes
             try { await connection.ExecuteAsync(@"ALTER TABLE ""ArticleVotes"" ADD COLUMN ""VoteValue"" INTEGER NOT NULL DEFAULT 0;"); } catch (SqliteException) {}
+
+            // 5. Add Profile Fields to Users
+            try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""Bio"" TEXT NULL;"); } catch (SqliteException) {}
+            try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""Interests"" TEXT NULL;"); } catch (SqliteException) {}
+            try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""NotificationPreferences"" TEXT NULL;"); } catch (SqliteException) {}
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to update schema for upvotes.");
+            logger.LogError(ex, "Failed to update schema.");
         }
         
         try

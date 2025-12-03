@@ -3,6 +3,7 @@ using Know.Shared.Models;
 using Know.ApiService.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using Know.ApiService.Endpoints;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -61,9 +62,10 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         builder =>
         {
-            builder.AllowAnyOrigin()
+            builder.WithOrigins("http://localhost:5075", "https://localhost:5075")
                    .AllowAnyMethod()
-                   .AllowAnyHeader();
+                   .AllowAnyHeader()
+                   .AllowCredentials();
         });
 });
 
@@ -160,6 +162,8 @@ app.MapGet("/api/users/{userId}/articles", async (string userId, VectorDbService
 })
 .WithName("GetUserArticles")
 .RequireAuthorization();
+
+app.MapProfileEndpoints();
 
 app.Run();
 
