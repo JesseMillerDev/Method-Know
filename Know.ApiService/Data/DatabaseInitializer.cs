@@ -16,8 +16,36 @@ public static class DatabaseInitializer
         // Step A: Ensure Database Created (Dev Mode)
         await dbContext.Database.EnsureCreatedAsync();
 
-        // Step B: Load Vector Extension
+        // Manual Schema Update for Upvotes (Poor man's migration)
         var connection = (SqliteConnection)dbContext.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
+
+        try 
+        {
+            // 1. Create ArticleVotes table
+            await connection.ExecuteAsync(@"
+                CREATE TABLE IF NOT EXISTS ""ArticleVotes"" (
+                    ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_ArticleVotes"" PRIMARY KEY AUTOINCREMENT,
+                    ""ArticleId"" INTEGER NOT NULL,
+                    ""UserId"" TEXT NOT NULL,
+                    ""VotedAt"" TEXT NOT NULL
+                );");
+
+            // 2. Add VoteCount to Articles if missing
+            // SQLite doesn't support IF NOT EXISTS for columns easily, so we try/catch
+            try 
+            {
+                await connection.ExecuteAsync(@"ALTER TABLE ""Articles"" ADD COLUMN ""VoteCount"" INTEGER NOT NULL DEFAULT 0;");
+            } 
+            catch (SqliteException) 
+            { 
+                // Ignore if column likely exists
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to update schema for upvotes.");
+        }
         
         try
         {

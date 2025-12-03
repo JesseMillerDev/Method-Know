@@ -62,6 +62,15 @@ else
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
                         </svg>
                         <span class="resource-tag">@FormatDate(article.CreatedAt)</span>
+                        
+                        <!-- Vote Button -->
+                        <button class="relative z-10 flex items-center gap-1 text-xs transition-colors duration-200 @(article.IsVoted ? "text-red-500" : "text-gray-400 hover:text-red-500")" 
+                                @onclick="async () => await ToggleVote(article)" @onclick:stopPropagation="true" @onclick:preventDefault="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="@(article.IsVoted ? "currentColor" : "none")" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+                            </svg>
+                            <span>@article.VoteCount</span>
+                        </button>
                     </div>
                 </div>
                 cardIndex++;
@@ -76,6 +85,32 @@ else
     [Parameter] public string SelectedCategory { get; set; } = "All";
     [Parameter] public string EmptyStateMessage { get; set; } = "Be the first to share knowledge with the community!";
     [Parameter] public EventCallback<int> OnViewArticle { get; set; }
+    
+    [Inject] public HttpClient Http { get; set; }
+
+    private async Task ToggleVote(Article article)
+    {
+        // Optimistic update
+        article.IsVoted = !article.IsVoted;
+        article.VoteCount += article.IsVoted ? 1 : -1;
+        
+        try
+        {
+            var response = await Http.PostAsync($"api/articles/{article.Id}/vote", null);
+            if (!response.IsSuccessStatusCode)
+            {
+                // Revert if failed
+                article.IsVoted = !article.IsVoted;
+                article.VoteCount += article.IsVoted ? 1 : -1;
+            }
+        }
+        catch
+        {
+            // Revert if failed
+            article.IsVoted = !article.IsVoted;
+            article.VoteCount += article.IsVoted ? 1 : -1;
+        }
+    }
 
     private string GetContentPreview(string content)
     {

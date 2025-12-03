@@ -65,7 +65,34 @@ public class VectorDbService
         return article;
     }
 
-    public async Task<IEnumerable<Article>> SearchAsync(float[] queryVector, int limit)
+    public async Task<bool> ToggleVoteAsync(int articleId, string userId)
+    {
+        var existingVote = await _dbContext.ArticleVotes
+            .FirstOrDefaultAsync(v => v.ArticleId == articleId && v.UserId == userId);
+
+        var article = await _dbContext.Articles.FindAsync(articleId);
+        if (article == null) return false;
+
+        if (existingVote != null)
+        {
+            _dbContext.ArticleVotes.Remove(existingVote);
+            article.VoteCount--;
+        }
+        else
+        {
+            _dbContext.ArticleVotes.Add(new ArticleVote
+            {
+                ArticleId = articleId,
+                UserId = userId
+            });
+            article.VoteCount++;
+        }
+
+        await _dbContext.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<IEnumerable<Article>> SearchAsync(float[] queryVector, int limit, string? userId = null)
     {
         var connection = _dbContext.Database.GetDbConnection();
         if (connection.State != System.Data.ConnectionState.Open)
@@ -97,7 +124,22 @@ public class VectorDbService
 
         try 
         {
-            var results = await connection.QueryAsync<Article>(sql, new { Vector = queryVectorBytes, Limit = limit });
+            var results = (await connection.QueryAsync<Article>(sql, new { Vector = queryVectorBytes, Limit = limit })).ToList();
+            
+            if (userId != null && results.Any())
+            {
+                var articleIds = results.Select(a => a.Id).ToList();
+                var userVotes = await _dbContext.ArticleVotes
+                    .Where(v => v.UserId == userId && articleIds.Contains(v.ArticleId))
+                    .Select(v => v.ArticleId)
+                    .ToListAsync();
+                
+                foreach (var article in results)
+                {
+                    article.IsVoted = userVotes.Contains(article.Id);
+                }
+            }
+            
             return results;
         }
         catch (Exception ex)
@@ -109,16 +151,47 @@ public class VectorDbService
 
     public async Task<IEnumerable<Article>> GetArticlesByUserIdAsync(string userId)
     {
-        return await _dbContext.Articles
+        var articles = await _dbContext.Articles
             .Where(a => a.UserId == userId)
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
+            
+        // Users always have voted for their own content? Or maybe not. 
+        // Let's check actual votes.
+        var articleIds = articles.Select(a => a.Id).ToList();
+        var userVotes = await _dbContext.ArticleVotes
+            .Where(v => v.UserId == userId && articleIds.Contains(v.ArticleId))
+            .Select(v => v.ArticleId)
+            .ToListAsync();
+            
+        foreach (var article in articles)
+        {
+            article.IsVoted = userVotes.Contains(article.Id);
+        }
+        
+        return articles;
     }
 
-    public async Task<IEnumerable<Article>> GetAllArticlesAsync()
+    public async Task<IEnumerable<Article>> GetAllArticlesAsync(string? userId = null)
     {
-        return await _dbContext.Articles
+        var articles = await _dbContext.Articles
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
+
+        if (userId != null && articles.Any())
+        {
+            var articleIds = articles.Select(a => a.Id).ToList();
+            var userVotes = await _dbContext.ArticleVotes
+                .Where(v => v.UserId == userId && articleIds.Contains(v.ArticleId))
+                .Select(v => v.ArticleId)
+                .ToListAsync();
+            
+            foreach (var article in articles)
+            {
+                article.IsVoted = userVotes.Contains(article.Id);
+            }
+        }
+
+        return articles;
     }
 }

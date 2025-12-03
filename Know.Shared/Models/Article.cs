@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Know.Shared.Models;
 
@@ -18,4 +19,9 @@ public class Article
     public string UserId { get; set; } = string.Empty;
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    public int VoteCount { get; set; }
+
+    [NotMapped]
+    public bool IsVoted { get; set; }
 }

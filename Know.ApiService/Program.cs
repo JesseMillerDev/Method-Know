@@ -118,20 +118,35 @@ app.MapPost("/api/articles", async (Article article, VectorDbService vectorServi
 .WithName("CreateArticle")
 .RequireAuthorization();
 
-app.MapGet("/api/search", async ([FromQuery] string query, VectorDbService vectorService, OnnxEmbeddingService embeddingService) =>
+app.MapGet("/api/search", async ([FromQuery] string query, VectorDbService vectorService, OnnxEmbeddingService embeddingService, HttpContext httpContext) =>
 {
+    var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     var queryVector = await embeddingService.GenerateEmbeddingAsync(query);
-    var results = await vectorService.SearchAsync(queryVector, 5);
+    var results = await vectorService.SearchAsync(queryVector, 5, userId);
     return Results.Ok(results);
 })
 .WithName("SearchArticles");
 
-app.MapGet("/api/articles", async (VectorDbService vectorService) =>
+app.MapGet("/api/articles", async (VectorDbService vectorService, HttpContext httpContext) =>
 {
-    var articles = await vectorService.GetAllArticlesAsync();
+    var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var articles = await vectorService.GetAllArticlesAsync(userId);
     return Results.Ok(articles);
 })
 .WithName("GetAllArticles")
+.RequireAuthorization();
+
+app.MapPost("/api/articles/{id}/vote", async (int id, VectorDbService vectorService, HttpContext httpContext) =>
+{
+    var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+    
+    var success = await vectorService.ToggleVoteAsync(id, userId);
+    if (!success) return Results.NotFound();
+    
+    return Results.Ok();
+})
+.WithName("VoteArticle")
 .RequireAuthorization();
 
 app.MapGet("/api/users/{userId}/articles", async (string userId, VectorDbService vectorService) =>
