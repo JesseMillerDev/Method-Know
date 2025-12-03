@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
     <link href="Know.Web.styles.css" rel="stylesheet" />
+
+    <!-- Prism.js for Syntax Highlighting -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
 </head>
 
 <body>
@@ -26,6 +29,59 @@
         <a href="." class="reload">Reload</a>
         <span class="dismiss">🗙</span>
     </div>
+
+    <!-- Prism.js Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+
+    <script>
+        // Helper function for Blazor to trigger syntax highlighting
+        window.highlightCode = () => {
+            if (window.Prism) {
+                Prism.highlightAll();
+            }
+        };
+
+        // Text manipulation helpers for code formatting toolbar
+        window.textAreaHelpers = {
+            // Insert text at cursor position
+            insertAtCursor: (elementId, textBefore, textAfter) => {
+                const textarea = document.getElementById(elementId);
+                if (!textarea) return '';
+
+                const start = textarea.selectionStart;
+                const end = textarea.selectionEnd;
+                const selectedText = textarea.value.substring(start, end);
+                const before = textarea.value.substring(0, start);
+                const after = textarea.value.substring(end);
+
+                // Insert the text
+                textarea.value = before + textBefore + selectedText + textAfter + after;
+
+                // Set cursor position
+                const newCursorPos = start + textBefore.length + selectedText.length;
+                textarea.selectionStart = newCursorPos;
+                textarea.selectionEnd = newCursorPos;
+
+                // Trigger input event for Blazor binding
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                textarea.focus();
+
+                return textarea.value;
+            },
+
+            // Get current textarea value
+            getValue: (elementId) => {
+                const textarea = document.getElementById(elementId);
+                return textarea ? textarea.value : '';
+            }
+        };
+    </script>
+
     <script src="_framework/blazor.webassembly.js"></script>
 </body>
 

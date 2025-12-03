@@ -1,0 +1,427 @@
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Net.Http.Headers
+@using Know.Web.Models
+@inject HttpClient Http
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject IJSRuntime JSRuntime
+
+<!-- Slide-out Modal -->
+@if (ShowModal)
+{
+    <!-- Backdrop -->
+    <div class="modal-backdrop" @onclick="HandleClose"></div>
+    
+    <!-- Modal Panel -->
+    <div class="modal-panel @(IsClosing ? "closing" : "")">
+        <!-- Header -->
+        <div class="modal-header">
+            <h2 class="modal-title">@(ModalMode == "create" ? "Add New Resource" : SelectedArticle?.Title)</h2>
+            <button @onclick="HandleClose" class="modal-close">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        
+        @if (ModalMode == "create")
+        {
+            <!-- Create Mode: Form -->
+            <div class="modal-body">
+                <form @onsubmit="HandleSubmit">
+                    <!-- Title Field -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-black mb-2">
+                            Title <span class="text-red-500">*</span>
+                        </label>
+                        <input 
+                            type="text" 
+                            @bind="newArticle.Title"
+                            placeholder="Enter article title..."
+                            class="premium-input"
+                            required
+                        />
+                        @if (showValidation && string.IsNullOrWhiteSpace(newArticle.Title))
+                        {
+                            <p class="validation-message error">Title is required</p>
+                        }
+                    </div>
+                    
+                    <!-- Category Field -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-black mb-2">
+                            Category <span class="text-red-500">*</span>
+                        </label>
+                        <select @bind="newArticle.Category" class="premium-select" required>
+                            <option value="">Select a category...</option>
+                            <option value="Documentation">Documentation</option>
+                            <option value="Tutorials">Tutorials</option>
+                            <option value="Articles">Articles</option>
+                        </select>
+                        @if (showValidation && string.IsNullOrWhiteSpace(newArticle.Category))
+                        {
+                            <p class="validation-message error">Category is required</p>
+                        }
+                    </div>
+                    
+                    <!-- Content Field -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-semibold text-black mb-2">
+                            Content <span class="text-red-500">*</span>
+                        </label>
+                        
+                        <!-- Formatting Toolbar -->
+                        <div class="formatting-toolbar">
+                            <button type="button" @onclick="InsertInlineCode" class="toolbar-btn" title="Inline Code">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" />
+                                </svg>
+                                <span>Inline Code</span>
+                            </button>
+                            
+                            <div class="toolbar-divider"></div>
+                            
+                            <button type="button" @onclick="InsertCodeBlock" class="toolbar-btn" title="Code Block">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M14.25 9.75L16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0020.25 18V6A2.25 2.25 0 0018 3.75H6A2.25 2.25 0 003.75 6v12A2.25 2.25 0 006 20.25z" />
+                                </svg>
+                                <span>Code Block</span>
+                            </button>
+                            
+                            <select @bind="selectedLanguage" class="toolbar-select" title="Select Language">
+                                <option value="csharp">C#</option>
+                                <option value="javascript">JavaScript</option>
+                                <option value="python">Python</option>
+                                <option value="json">JSON</option>
+                                <option value="bash">Bash</option>
+                                <option value="html">HTML</option>
+                                <option value="css">CSS</option>
+                                <option value="sql">SQL</option>
+                            </select>
+                        </div>
+                        
+                        <textarea 
+                            id="contentTextarea"
+                            @bind="newArticle.Content"
+                            placeholder="Enter your content here... Use the toolbar above to insert code snippets."
+                            class="premium-textarea"
+                            rows="10"
+                            required
+                        ></textarea>
+                        @if (showValidation && string.IsNullOrWhiteSpace(newArticle.Content))
+                        {
+                            <p class="validation-message error">Content is required</p>
+                        }
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Footer -->
+            <div class="modal-footer">
+                <button type="button" @onclick="HandleClose" class="secondary-button" disabled="@isSubmitting">
+                    Cancel
+                </button>
+                <button type="submit" @onclick="HandleSubmit" class="premium-button flex items-center gap-2" disabled="@isSubmitting">
+                    @if (isSubmitting)
+                    {
+                        <div class="spinner"></div>
+                        <span>Creating...</span>
+                    }
+                    else
+                    {
+                        <span>Create Resource</span>
+                    }
+                </button>
+            </div>
+        }
+        else
+        {
+            <!-- View Mode: Article Display -->
+            <div class="modal-body">
+                @if (SelectedArticle != null)
+                {
+                    <!-- Metadata Bar -->
+                    <div class="flex items-center gap-4 mb-6 pb-6 border-b border-gray-200">
+                        <span class="category-badge">
+                            @(string.IsNullOrWhiteSpace(SelectedArticle.Category) ? "Uncategorized" : SelectedArticle.Category)
+                        </span>
+                        <div class="flex items-center gap-2 text-sm text-gray-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                            </svg>
+                            <span>@FormatDate(SelectedArticle.CreatedAt)</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Article Content -->
+                    <div class="article-content">
+                        <div class="prose prose-lg max-w-none">
+                            @((MarkupString)FormatArticleContent(SelectedArticle.Content))
+                        </div>
+                    </div>
+                }
+            </div>
+            
+            <!-- Footer with Actions -->
+            <div class="modal-footer">
+                <button type="button" @onclick="HandleClose" class="secondary-button">
+                    Close
+                </button>
+                <!-- Future: Add Edit and Delete buttons here -->
+            </div>
+        }
+    </div>
+}
+
+<!-- Toast Notifications -->
+@if (showToast)
+{
+    <div class="toast-notification @toastType">
+        <div class="toast-icon">
+            @if (toastType == "success")
+            {
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            }
+            else
+            {
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+            }
+        </div>
+        <div class="toast-message">@toastMessage</div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool ShowModal { get; set; }
+    [Parameter] public bool IsClosing { get; set; }
+    [Parameter] public string ModalMode { get; set; } = "view"; // "create" or "view"
+    [Parameter] public Article? SelectedArticle { get; set; }
+    [Parameter] public string? UserId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<Article> OnArticleCreated { get; set; }
+    
+    private bool isSubmitting = false;
+    private bool showValidation = false;
+    private string selectedLanguage = "csharp";
+    private Article newArticle = new();
+    
+    // Toast state
+    private bool showToast = false;
+    private string toastType = "";
+    private string toastMessage = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (ShowModal && ModalMode == "create")
+        {
+            newArticle = new Article();
+            showValidation = false;
+        }
+        
+        // Trigger syntax highlighting when viewing an article
+        if (ShowModal && ModalMode == "view" && SelectedArticle != null)
+        {
+            await Task.Delay(100);
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("highlightCode");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error highlighting code: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task HandleClose()
+    {
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task HandleSubmit()
+    {
+        showValidation = true;
+        
+        // Validate form
+        if (string.IsNullOrWhiteSpace(newArticle.Title) || 
+            string.IsNullOrWhiteSpace(newArticle.Content) || 
+            string.IsNullOrWhiteSpace(newArticle.Category))
+        {
+            return;
+        }
+        
+        isSubmitting = true;
+        StateHasChanged();
+        
+        try
+        {
+            // Set userId for the new article
+            newArticle.UserId = UserId ?? "";
+            newArticle.CreatedAt = DateTime.UtcNow;
+            
+            // Post to API
+            var response = await Http.PostAsJsonAsync("/api/articles", newArticle);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var createdArticle = await response.Content.ReadFromJsonAsync<Article>();
+                if (createdArticle != null)
+                {
+                    // Notify parent component
+                    await OnArticleCreated.InvokeAsync(createdArticle);
+                }
+                
+                // Show success toast
+                ShowToast("success", "Resource created successfully!");
+                
+                // Close modal after a brief delay
+                await Task.Delay(500);
+                await HandleClose();
+            }
+            else
+            {
+                ShowToast("error", "Failed to create resource. Please try again.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating article: {ex.Message}");
+            ShowToast("error", "An error occurred. Please try again.");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async void ShowToast(string type, string message)
+    {
+        toastType = type;
+        toastMessage = message;
+        showToast = true;
+        StateHasChanged();
+        
+        await Task.Delay(3000);
+        showToast = false;
+        StateHasChanged();
+    }
+    
+    private async Task InsertInlineCode()
+    {
+        try
+        {
+            var newContent = await JSRuntime.InvokeAsync<string>(
+                "textAreaHelpers.insertAtCursor",
+                "contentTextarea",
+                "`",
+                "`"
+            );
+            newArticle.Content = newContent;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error inserting inline code: {ex.Message}");
+        }
+    }
+    
+    private async Task InsertCodeBlock()
+    {
+        try
+        {
+            var textBefore = $"```{selectedLanguage}\n";
+            var textAfter = "\n```";
+            
+            var newContent = await JSRuntime.InvokeAsync<string>(
+                "textAreaHelpers.insertAtCursor",
+                "contentTextarea",
+                textBefore,
+                textAfter
+            );
+            newArticle.Content = newContent;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error inserting code block: {ex.Message}");
+        }
+    }
+
+    private string FormatDate(DateTime date)
+    {
+        var timeSpan = DateTime.UtcNow - date;
+        
+        if (timeSpan.TotalDays < 1)
+            return "Today";
+        else if (timeSpan.TotalDays < 2)
+            return "Yesterday";
+        else if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays} days ago";
+        else if (timeSpan.TotalDays < 30)
+            return $"{(int)(timeSpan.TotalDays / 7)} weeks ago";
+        else
+            return date.ToString("MMM dd, yyyy");
+    }
+
+    private string FormatArticleContent(string content)
+    {
+        if (string.IsNullOrWhiteSpace(content))
+            return "<p class='text-gray-500 italic'>No content available</p>";
+        
+        // Handle code blocks first (```language...```)
+        var codeBlockPattern = @"```(\w+)?\s*\n(.*?)```";
+        content = System.Text.RegularExpressions.Regex.Replace(
+            content, 
+            codeBlockPattern,
+            match => {
+                var language = match.Groups[1].Success && !string.IsNullOrEmpty(match.Groups[1].Value) 
+                    ? match.Groups[1].Value 
+                    : "plaintext";
+                var code = System.Web.HttpUtility.HtmlEncode(match.Groups[2].Value.Trim());
+                return $"<pre><code class='language-{language}'>{code}</code></pre>";
+            },
+            System.Text.RegularExpressions.RegexOptions.Singleline
+        );
+        
+        // Handle inline code (`code`) - do this BEFORE paragraph processing
+        content = System.Text.RegularExpressions.Regex.Replace(
+            content,
+            @"`([^`]+)`",
+            match => {
+                var code = System.Web.HttpUtility.HtmlEncode(match.Groups[1].Value);
+                return $"<code class='inline-code'>{code}</code>";
+            }
+        );
+        
+        // Split by double newlines for paragraphs (for non-code content)
+        var paragraphs = content.Split(new[] { "\n\n", "\r\n\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+        
+        var formatted = string.Join("", paragraphs.Select(p => 
+        {
+            var trimmed = p.Trim();
+            
+            // Don't wrap code blocks in paragraphs
+            if (trimmed.StartsWith("<pre>"))
+                return trimmed;
+            
+            // Don't encode content that already has HTML tags (inline code)
+            if (trimmed.Contains("<code class='inline-code'>"))
+            {
+                // Just wrap in paragraph, don't encode
+                return $"<p class='mb-4 text-gray-800 leading-relaxed'>{trimmed.Replace("\n", "<br/>")}</p>";
+            }
+            
+            // Regular paragraph - encode it
+            var encoded = System.Web.HttpUtility.HtmlEncode(trimmed).Replace("\n", "<br/>");
+            return $"<p class='mb-4 text-gray-800 leading-relaxed'>{encoded}</p>";
+        }));
+        
+        return formatted;
+    }
+
+
+}

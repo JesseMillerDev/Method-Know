@@ -92,4 +92,11 @@ public class VectorDbService
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
     }
+
+    public async Task<IEnumerable<Article>> GetAllArticlesAsync()
+    {
+        return await _dbContext.Articles
+            .OrderByDescending(a => a.CreatedAt)
+            .ToListAsync();
+    }
 }

@@ -794,6 +794,34 @@
     @apply flex-1 font-medium;
 }
 
+/* Article Content Display */
+.article-content {
+    @apply text-gray-800;
+}
+
+.article-content .prose {
+    max-width: none !important;
+}
+
+.article-content .prose p {
+    margin-bottom: 1rem;
+    line-height: 1.75;
+    color: #1a1a1a;
+}
+
+.article-content .prose p:last-child {
+    margin-bottom: 0;
+}
+
+.article-content .prose strong {
+    font-weight: 600;
+    color: #000;
+}
+
+.article-content .prose em {
+    font-style: italic;
+}
+
 
 
 /* ============================================

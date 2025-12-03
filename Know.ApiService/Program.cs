@@ -126,6 +126,14 @@ app.MapGet("/api/search", async ([FromQuery] string query, VectorDbService vecto
 })
 .WithName("SearchArticles");
 
+app.MapGet("/api/articles", async (VectorDbService vectorService) =>
+{
+    var articles = await vectorService.GetAllArticlesAsync();
+    return Results.Ok(articles);
+})
+.WithName("GetAllArticles")
+.RequireAuthorization();
+
 app.MapGet("/api/users/{userId}/articles", async (string userId, VectorDbService vectorService) =>
 {
     var articles = await vectorService.GetArticlesByUserIdAsync(userId);
