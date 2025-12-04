@@ -23,13 +23,28 @@ public class VectorDbService
         _logger = logger;
     }
 
-    public async Task<Article> CreateArticleAsync(Article article, float[] vector)
+    public async Task<Article> CreateArticleAsync(Article article, float[]? vector)
     {
         // 1. Save to EF Core (Structured Data)
         _dbContext.Articles.Add(article);
         await _dbContext.SaveChangesAsync();
 
-        // 2. Save to Vector Table (Raw SQL)
+        // 2. Save to Vector Table (Raw SQL) - ONLY if vector is provided
+        if (vector != null)
+        {
+            await InsertVectorAsync(article.Id, vector);
+        }
+
+        return article;
+    }
+
+    public async Task UpdateArticleEmbeddingAsync(int articleId, float[] vector)
+    {
+        await InsertVectorAsync(articleId, vector);
+    }
+
+    private async Task InsertVectorAsync(int articleId, float[] vector)
+    {
         var connection = _dbContext.Database.GetDbConnection();
         if (connection.State != System.Data.ConnectionState.Open)
         {
@@ -38,38 +53,25 @@ public class VectorDbService
 
         try
         {
-            // Note: We need to ensure the extension is loaded for this connection if it wasn't the one in Initializer.
-            // SQLite connections are usually pooled, but extensions might need reloading if the connection is fresh.
-            // However, typically extensions are per-connection. 
-            // For simplicity/robustness, we might want to try loading it again or assume the pool handles it?
-            // Actually, SQLite extensions are NOT persistent across connections. 
-            // We should probably load it here if we want to be safe, or rely on a connection interceptor.
-            // For this implementation, I'll try to load it and swallow error if already loaded or fail if missing.
-            // But since we are in a scoped service, we can just try loading it.
-            
-            // A better approach for production is a DbConnectionInterceptor, but for now:
-             try 
-             { 
-                 var extensionPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Libs", "vec0.dylib");
-                 ((Microsoft.Data.Sqlite.SqliteConnection)connection).LoadExtension(extensionPath); 
-             } catch {}
+            var extensionPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Libs", "vec0.dylib");
+            ((Microsoft.Data.Sqlite.SqliteConnection)connection).LoadExtension(extensionPath); 
+        } catch {}
 
-            // Convert float[] to byte[] for sqlite-vec
-            var vectorBytes = new byte[vector.Length * sizeof(float)];
-            Buffer.BlockCopy(vector, 0, vectorBytes, 0, vectorBytes.Length);
+        // Convert float[] to byte[] for sqlite-vec
+        var vectorBytes = new byte[vector.Length * sizeof(float)];
+        Buffer.BlockCopy(vector, 0, vectorBytes, 0, vectorBytes.Length);
 
-            var sql = "INSERT INTO vec_articles(article_id, embedding) VALUES (@Id, @Vector)";
-            var rows = await connection.ExecuteAsync(sql, new { Id = article.Id, Vector = vectorBytes });
-            _logger.LogInformation("Inserted vector for article {Id}. Rows affected: {Rows}", article.Id, rows);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to insert vector for article {Id}", article.Id);
-            // We might want to rollback the EF transaction here if strict consistency is needed.
-            // For now, we'll log and keep the article.
-        }
+        // Check if vector exists first (upsert logic)
+        // For simplicity, we'll just delete and insert, or use INSERT OR REPLACE if table supports it.
+        // vec_articles doesn't have a PK on article_id usually unless defined. 
+        // Let's assume we just want to insert. If it exists, we might want to delete old one first.
+        
+        var deleteSql = "DELETE FROM vec_articles WHERE article_id = @Id";
+        await connection.ExecuteAsync(deleteSql, new { Id = articleId });
 
-        return article;
+        var sql = "INSERT INTO vec_articles(article_id, embedding) VALUES (@Id, @Vector)";
+        var rows = await connection.ExecuteAsync(sql, new { Id = articleId, Vector = vectorBytes });
+        _logger.LogInformation("Inserted vector for article {Id}. Rows affected: {Rows}", articleId, rows);
     }
 
     public async Task<bool> VoteAsync(int articleId, string userId, int voteValue)

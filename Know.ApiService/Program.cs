@@ -34,6 +34,10 @@ builder.Services.AddScoped<AuthService>();
 // Register Embedding Service
 builder.Services.AddSingleton<OnnxEmbeddingService>();
 
+// Register Background Services
+builder.Services.AddSingleton<BackgroundQueue>();
+builder.Services.AddHostedService<EmbeddingBackgroundService>();
+
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_that_should_be_in_env_vars_and_long_enough";
 builder.Services.AddAuthentication(options =>
@@ -109,13 +113,13 @@ app.MapPost("/api/auth/login", async (AuthService authService, [FromBody] LoginR
 .WithName("Login");
 
 // Endpoints
-app.MapPost("/api/articles", async (Article article, VectorDbService vectorService, OnnxEmbeddingService embeddingService) =>
+app.MapPost("/api/articles", async (Article article, VectorDbService vectorService, BackgroundQueue queue) =>
 {
-    // Generate real embedding from article content (combining Title and Content)
-    var textToEmbed = $"{article.Title} {article.Content}";
-    var vector = await embeddingService.GenerateEmbeddingAsync(textToEmbed);
-
-    var createdArticle = await vectorService.CreateArticleAsync(article, vector);
+    // Create article without vector first (fast)
+    var createdArticle = await vectorService.CreateArticleAsync(article, null);
+    
+    // Queue for background embedding generation
+    await queue.EnqueueAsync(createdArticle.Id);
     return Results.Created($"/api/articles/{createdArticle.Id}", createdArticle);
 })
 .WithName("CreateArticle")

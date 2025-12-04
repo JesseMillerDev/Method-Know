@@ -16,7 +16,7 @@
         </div>
         
         <!-- Filter Pills -->
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
             <button class="filter-pill @(SelectedCategory == "All" ? "active" : "")" @onclick='() => OnCategoryChanged.InvokeAsync("All")'>All</button>
             <button class="filter-pill @(SelectedCategory == "Documentation" ? "active" : "")" @onclick='() => OnCategoryChanged.InvokeAsync("Documentation")'>Docs</button>
             <button class="filter-pill @(SelectedCategory == "Tutorials" ? "active" : "")" @onclick='() => OnCategoryChanged.InvokeAsync("Tutorials")'>Tutorials</button>

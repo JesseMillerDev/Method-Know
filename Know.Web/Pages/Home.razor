@@ -12,14 +12,15 @@
 <PageTitle>Resources</PageTitle>
 
 <!-- Page Header -->
-<div class="mb-12 fade-in flex items-end justify-between">
+<!-- Page Header -->
+<div class="mb-8 md:mb-12 fade-in flex flex-col md:flex-row items-start md:items-end justify-between gap-4">
     <div>
-        <h1 class="text-5xl font-bold text-black mb-3" style="letter-spacing: -0.02em;">Resources</h1>
-        <p class="text-lg text-gray-600 font-medium">Discover knowledge and tools shared by the community.</p>
+        <h1 class="text-3xl md:text-5xl font-bold text-black mb-2 md:mb-3" style="letter-spacing: -0.02em;">Resources</h1>
+        <p class="text-base md:text-lg text-gray-600 font-medium">Discover knowledge and tools shared by the community.</p>
     </div>
     
     <!-- Add Resource Button -->
-    <button @onclick="OpenCreateModal" class="premium-button flex items-center gap-2" style="width: auto;">
+    <button @onclick="OpenCreateModal" class="premium-button flex items-center justify-center gap-2 !w-auto">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
         </svg>
