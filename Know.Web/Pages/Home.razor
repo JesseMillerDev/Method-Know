@@ -60,6 +60,8 @@ else
     UserId="@userId"
     OnClose="@CloseModal"
     OnArticleCreated="@HandleArticleCreated"
+    OnArticleUpdated="@HandleArticleUpdated"
+    OnArticleDeleted="@HandleArticleDeleted"
 />
 
 
@@ -216,10 +218,38 @@ else
         StateHasChanged();
     }
 
-    private void HandleArticleCreated(Article article)
+    private async Task HandleArticleCreated(Article article)
     {
-        articles.Insert(0, article);
-        StateHasChanged();
+        await RefreshArticles();
+    }
+
+    private async Task HandleArticleUpdated(Article article)
+    {
+        selectedArticle = article;
+        await RefreshArticles();
+    }
+
+    private async Task HandleArticleDeleted(int articleId)
+    {
+        if (selectedArticle?.Id == articleId)
+        {
+            selectedArticle = null;
+        }
+
+        await RefreshArticles();
+    }
+
+    private async Task RefreshArticles()
+    {
+        try
+        {
+            articles = await Http.GetFromJsonAsync<List<Article>>("/api/articles") ?? new();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error refreshing articles: {ex.Message}");
+        }
     }
 
 

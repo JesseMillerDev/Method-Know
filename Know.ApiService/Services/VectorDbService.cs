@@ -5,6 +5,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Know.ApiService.Services;
 
+public enum OperationResult
+{
+    Success,
+    NotFound,
+    Forbidden
+}
+
 public class VectorDbService
 {
     private readonly AppDbContext _dbContext;
@@ -238,5 +245,97 @@ public class VectorDbService
         }
 
         return articles;
+    }
+
+    public async Task<(OperationResult Status, Article? Article)> UpdateArticleAsync(int id, Article updatedArticle, float[] vector, string userId)
+    {
+        var existingArticle = await _dbContext.Articles.FindAsync(id);
+
+        if (existingArticle == null)
+        {
+            return (OperationResult.NotFound, null);
+        }
+
+        if (!string.Equals(existingArticle.UserId, userId, StringComparison.Ordinal))
+        {
+            return (OperationResult.Forbidden, null);
+        }
+
+        existingArticle.Title = updatedArticle.Title;
+        existingArticle.Content = updatedArticle.Content;
+        existingArticle.Category = updatedArticle.Category;
+
+        await _dbContext.SaveChangesAsync();
+
+        var connection = _dbContext.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+        {
+            await connection.OpenAsync();
+        }
+
+        try
+        {
+            try
+            {
+                var extensionPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Libs", "vec0.dylib");
+                ((Microsoft.Data.Sqlite.SqliteConnection)connection).LoadExtension(extensionPath);
+            }
+            catch { }
+
+            var vectorBytes = new byte[vector.Length * sizeof(float)];
+            Buffer.BlockCopy(vector, 0, vectorBytes, 0, vectorBytes.Length);
+
+            var sql = "UPDATE vec_articles SET embedding = @Vector WHERE article_id = @Id";
+            var rows = await connection.ExecuteAsync(sql, new { Id = existingArticle.Id, Vector = vectorBytes });
+
+            if (rows == 0)
+            {
+                await connection.ExecuteAsync("INSERT INTO vec_articles(article_id, embedding) VALUES (@Id, @Vector)", new { Id = existingArticle.Id, Vector = vectorBytes });
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update vector for article {Id}", existingArticle.Id);
+        }
+
+        return (OperationResult.Success, existingArticle);
+    }
+
+    public async Task<OperationResult> DeleteArticleAsync(int id, string userId)
+    {
+        var article = await _dbContext.Articles.FindAsync(id);
+
+        if (article == null)
+        {
+            return OperationResult.NotFound;
+        }
+
+        if (!string.Equals(article.UserId, userId, StringComparison.Ordinal))
+        {
+            return OperationResult.Forbidden;
+        }
+
+        var votes = _dbContext.ArticleVotes.Where(v => v.ArticleId == id);
+        _dbContext.ArticleVotes.RemoveRange(votes);
+        _dbContext.Articles.Remove(article);
+
+        await _dbContext.SaveChangesAsync();
+
+        var connection = _dbContext.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open)
+        {
+            await connection.OpenAsync();
+        }
+
+        try
+        {
+            await connection.ExecuteAsync("DELETE FROM vec_articles WHERE article_id = @Id", new { Id = id });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete vector for article {Id}", id);
+        }
+
+        return OperationResult.Success;
     }
 }
