@@ -114,11 +114,31 @@ app.MapPost("/api/articles", async (Article article, VectorDbService vectorServi
     // Generate real embedding from article content (combining Title and Content)
     var textToEmbed = $"{article.Title} {article.Content}";
     var vector = await embeddingService.GenerateEmbeddingAsync(textToEmbed);
-    
+
     var createdArticle = await vectorService.CreateArticleAsync(article, vector);
     return Results.Created($"/api/articles/{createdArticle.Id}", createdArticle);
 })
 .WithName("CreateArticle")
+.RequireAuthorization();
+
+app.MapPut("/api/articles/{id}", async (int id, Article article, VectorDbService vectorService, OnnxEmbeddingService embeddingService, HttpContext httpContext) =>
+{
+    var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var textToEmbed = $"{article.Title} {article.Content}";
+    var vector = await embeddingService.GenerateEmbeddingAsync(textToEmbed);
+
+    var (status, updatedArticle) = await vectorService.UpdateArticleAsync(id, article, vector, userId);
+
+    return status switch
+    {
+        OperationResult.NotFound => Results.NotFound(),
+        OperationResult.Forbidden => Results.Forbid(),
+        _ => Results.Ok(updatedArticle)
+    };
+})
+.WithName("UpdateArticle")
 .RequireAuthorization();
 
 app.MapGet("/api/search", async ([FromQuery] string query, VectorDbService vectorService, OnnxEmbeddingService embeddingService, HttpContext httpContext) =>
@@ -137,6 +157,23 @@ app.MapGet("/api/articles", async (VectorDbService vectorService, HttpContext ht
     return Results.Ok(articles);
 })
 .WithName("GetAllArticles")
+.RequireAuthorization();
+
+app.MapDelete("/api/articles/{id}", async (int id, VectorDbService vectorService, HttpContext httpContext) =>
+{
+    var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
+
+    var status = await vectorService.DeleteArticleAsync(id, userId);
+
+    return status switch
+    {
+        OperationResult.NotFound => Results.NotFound(),
+        OperationResult.Forbidden => Results.Forbid(),
+        _ => Results.NoContent()
+    };
+})
+.WithName("DeleteArticle")
 .RequireAuthorization();
 
 app.MapPost("/api/articles/{id}/vote", async (int id, int? voteValue, VectorDbService vectorService, HttpContext httpContext) =>
