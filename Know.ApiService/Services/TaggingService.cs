@@ -55,7 +55,7 @@ public class TaggingService : IDisposable
             var executor = new InteractiveExecutor(context);
 
             // Llama 3 Prompt Format
-            var prompt = $@"<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+            var prompt = $@"<|start_header_id|>system<|end_header_id|>
 
 You are a strict technical tagging assistant.
 Identify the top 3-5 most relevant technical topics, technologies, or frameworks in the text.
