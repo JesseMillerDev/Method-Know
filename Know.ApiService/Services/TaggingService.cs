@@ -28,7 +28,7 @@ public class TaggingService : IDisposable
 
         var parameters = new ModelParams(_modelPath)
         {
-            ContextSize = 4096,
+            ContextSize = 2048,
             GpuLayerCount = 0 // CPU for now
         };
 
@@ -39,13 +39,15 @@ public class TaggingService : IDisposable
     {
         if (_model == null) return new List<string>();
 
-        // Create a context for this specific request to ensure isolation
-        var parameters = new ModelParams(_modelPath) { ContextSize = 4096, GpuLayerCount = 0 };
-        using var context = _model.CreateContext(parameters);
-        var executor = new InteractiveExecutor(context);
+        try
+        {
+            // Create a context for this specific request to ensure isolation
+            var parameters = new ModelParams(_modelPath) { ContextSize = 2048, GpuLayerCount = 0 };
+            using var context = _model.CreateContext(parameters);
+            var executor = new InteractiveExecutor(context);
 
-        // Llama 3 Prompt Format
-        var prompt = $@"<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+            // Llama 3 Prompt Format
+            var prompt = $@"<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
 You are a strict technical tagging assistant.
 Identify the top 3-5 most relevant technical topics, technologies, or frameworks in the text.
@@ -61,33 +63,41 @@ Text:
 Tags:<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 ";
 
-        var inferenceParams = new InferenceParams()
-        {
-            SamplingPipeline = new DefaultSamplingPipeline { Temperature = 0.1f },
-            AntiPrompts = new List<string> { "<|eot_id|>" },
-            MaxTokens = 100
-        };
+            var inferenceParams = new InferenceParams()
+            {
+                SamplingPipeline = new DefaultSamplingPipeline { Temperature = 0.1f },
+                AntiPrompts = new List<string> { "<|eot_id|>" },
+                MaxTokens = 100
+            };
 
-        var result = "";
-        await foreach (var text in executor.InferAsync(prompt, inferenceParams))
-        {
-            result += text;
+            var result = "";
+            await foreach (var text in executor.InferAsync(prompt, inferenceParams))
+            {
+                result += text;
+            }
+
+            return ParseAndNormalizeTags(result);
         }
-
-        return ParseAndNormalizeTags(result);
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to generate tags (likely OOM). Skipping tagging.");
+            return new List<string>();
+        }
     }
 
     public async Task<string> GenerateSummaryAsync(string content)
     {
         if (_model == null) return "";
 
-        // Create a context for this specific request to ensure isolation
-        var parameters = new ModelParams(_modelPath) { ContextSize = 4096, GpuLayerCount = 0 };
-        using var context = _model.CreateContext(parameters);
-        var executor = new InteractiveExecutor(context);
+        try
+        {
+            // Create a context for this specific request to ensure isolation
+            var parameters = new ModelParams(_modelPath) { ContextSize = 2048, GpuLayerCount = 0 };
+            using var context = _model.CreateContext(parameters);
+            var executor = new InteractiveExecutor(context);
 
-        // Llama 3 Prompt Format
-        var prompt = $@"<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+            // Llama 3 Prompt Format
+            var prompt = $@"<|begin_of_text|><|start_header_id|>system<|end_header_id|>
 
 You are a helpful assistant that summarizes technical articles.
 Create a concise 2-sentence summary of the following text.
@@ -100,20 +110,26 @@ Text:
 Summary:<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 ";
 
-        var inferenceParams = new InferenceParams()
-        {
-            SamplingPipeline = new DefaultSamplingPipeline { Temperature = 0.2f },
-            AntiPrompts = new List<string> { "<|eot_id|>" },
-            MaxTokens = 150
-        };
+            var inferenceParams = new InferenceParams()
+            {
+                SamplingPipeline = new DefaultSamplingPipeline { Temperature = 0.2f },
+                AntiPrompts = new List<string> { "<|eot_id|>" },
+                MaxTokens = 150
+            };
 
-        var result = "";
-        await foreach (var text in executor.InferAsync(prompt, inferenceParams))
-        {
-            result += text;
+            var result = "";
+            await foreach (var text in executor.InferAsync(prompt, inferenceParams))
+            {
+                result += text;
+            }
+
+            return result.Trim();
         }
-
-        return result.Trim();
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to generate summary (likely OOM). Skipping summary.");
+            return "";
+        }
     }
 
     private List<string> ParseAndNormalizeTags(string llmOutput)
