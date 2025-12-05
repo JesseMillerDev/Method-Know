@@ -32,7 +32,15 @@ public class TaggingService : IDisposable
             GpuLayerCount = 0 // CPU for now
         };
 
-        _model = LLamaWeights.LoadFromFile(parameters);
+        try 
+        {
+            _model = LLamaWeights.LoadFromFile(parameters);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to load LLM model (likely OOM). Tagging will be disabled.");
+            _model = null;
+        }
     }
 
     public async Task<List<string>> GenerateTagsAsync(string content)
