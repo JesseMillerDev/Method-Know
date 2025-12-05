@@ -1,0 +1,49 @@
+@inject IJSRuntime JSRuntime
+
+<div class="prose prose-lg max-w-none markdown-content">
+    @((MarkupString)_renderedHtml)
+</div>
+
+@code {
+    [Parameter] public string? Content { get; set; }
+    
+    private string _renderedHtml = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await RenderMarkdown();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await RenderMarkdown();
+        }
+    }
+
+    private async Task RenderMarkdown()
+    {
+        if (string.IsNullOrWhiteSpace(Content))
+        {
+            _renderedHtml = "<p class='text-gray-500 italic'>No content available</p>";
+        }
+        else
+        {
+            try 
+            {
+                _renderedHtml = await JSRuntime.InvokeAsync<string>("markdownHelpers.renderMarkdown", Content);
+                
+                // Trigger syntax highlighting after rendering
+                await Task.Delay(50);
+                await JSRuntime.InvokeVoidAsync("highlightCode");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error rendering markdown: {ex.Message}");
+                _renderedHtml = Content; // Fallback to raw content
+            }
+        }
+        StateHasChanged();
+    }
+}

@@ -249,7 +249,7 @@ public class VectorDbService
         return articles;
     }
 
-    public async Task<(OperationResult Status, Article? Article)> UpdateArticleAsync(int id, Article updatedArticle, float[] vector, string userId)
+    public async Task<(OperationResult Status, Article? Article)> UpdateArticleAsync(int id, Article updatedArticle, float[]? vector, string userId)
     {
         var existingArticle = await _dbContext.Articles.FindAsync(id);
 
@@ -266,6 +266,8 @@ public class VectorDbService
         existingArticle.Title = updatedArticle.Title;
         existingArticle.Content = updatedArticle.Content;
         existingArticle.Category = updatedArticle.Category;
+        existingArticle.Tags = updatedArticle.Tags;
+        existingArticle.Summary = updatedArticle.Summary;
 
         await _dbContext.SaveChangesAsync();
 
@@ -275,29 +277,32 @@ public class VectorDbService
             await connection.OpenAsync();
         }
 
-        try
+        if (vector != null)
         {
             try
             {
-                var extensionPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Libs", "vec0.dylib");
-                ((Microsoft.Data.Sqlite.SqliteConnection)connection).LoadExtension(extensionPath);
+                try
+                {
+                    var extensionPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Libs", "vec0.dylib");
+                    ((Microsoft.Data.Sqlite.SqliteConnection)connection).LoadExtension(extensionPath);
+                }
+                catch { }
+
+                var vectorBytes = new byte[vector.Length * sizeof(float)];
+                Buffer.BlockCopy(vector, 0, vectorBytes, 0, vectorBytes.Length);
+
+                var sql = "UPDATE vec_articles SET embedding = @Vector WHERE article_id = @Id";
+                var rows = await connection.ExecuteAsync(sql, new { Id = existingArticle.Id, Vector = vectorBytes });
+
+                if (rows == 0)
+                {
+                    await connection.ExecuteAsync("INSERT INTO vec_articles(article_id, embedding) VALUES (@Id, @Vector)", new { Id = existingArticle.Id, Vector = vectorBytes });
+                }
             }
-            catch { }
-
-            var vectorBytes = new byte[vector.Length * sizeof(float)];
-            Buffer.BlockCopy(vector, 0, vectorBytes, 0, vectorBytes.Length);
-
-            var sql = "UPDATE vec_articles SET embedding = @Vector WHERE article_id = @Id";
-            var rows = await connection.ExecuteAsync(sql, new { Id = existingArticle.Id, Vector = vectorBytes });
-
-            if (rows == 0)
+            catch (Exception ex)
             {
-                await connection.ExecuteAsync("INSERT INTO vec_articles(article_id, embedding) VALUES (@Id, @Vector)", new { Id = existingArticle.Id, Vector = vectorBytes });
+                _logger.LogError(ex, "Failed to update vector for article {Id}", existingArticle.Id);
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to update vector for article {Id}", existingArticle.Id);
         }
 
         return (OperationResult.Success, existingArticle);

@@ -14,9 +14,20 @@ public class Article
     public string Content { get; set; } = string.Empty;
     
     public string Category { get; set; } = string.Empty;
+    
+    public string? Summary { get; set; }
 
     [Required]
     public string UserId { get; set; } = string.Empty;
+
+    public string Tags { get; set; } = "[]";
+
+    [NotMapped]
+    public List<string> TagList 
+    { 
+        get => System.Text.Json.JsonSerializer.Deserialize<List<string>>(Tags) ?? new List<string>();
+        set => Tags = System.Text.Json.JsonSerializer.Serialize(value);
+    }
     
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

@@ -38,6 +38,8 @@ public static class DatabaseInitializer
             try { await connection.ExecuteAsync(@"ALTER TABLE ""Articles"" ADD COLUMN ""Score"" INTEGER NOT NULL DEFAULT 0;"); } catch (SqliteException) {}
             try { await connection.ExecuteAsync(@"ALTER TABLE ""Articles"" ADD COLUMN ""Upvotes"" INTEGER NOT NULL DEFAULT 0;"); } catch (SqliteException) {}
             try { await connection.ExecuteAsync(@"ALTER TABLE ""Articles"" ADD COLUMN ""Downvotes"" INTEGER NOT NULL DEFAULT 0;"); } catch (SqliteException) {}
+            try { await connection.ExecuteAsync(@"ALTER TABLE ""Articles"" ADD COLUMN ""Tags"" TEXT NOT NULL DEFAULT '[]';"); } catch (SqliteException ex) { logger.LogWarning(ex, "Could not add Tags column (might exist)."); }
+            try { await connection.ExecuteAsync(@"ALTER TABLE ""Articles"" ADD COLUMN ""Summary"" TEXT NULL;"); } catch (SqliteException ex) { logger.LogWarning(ex, "Could not add Summary column (might exist)."); }
 
             // 4. Add VoteValue to ArticleVotes
             try { await connection.ExecuteAsync(@"ALTER TABLE ""ArticleVotes"" ADD COLUMN ""VoteValue"" INTEGER NOT NULL DEFAULT 0;"); } catch (SqliteException) {}

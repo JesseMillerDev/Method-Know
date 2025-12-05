@@ -19,3 +19,8 @@ yarn-error.log
 
 # Mac
 .DS_Store
+
+# Models
+*.gguf
+*.bin
+

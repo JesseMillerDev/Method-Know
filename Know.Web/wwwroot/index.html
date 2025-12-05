@@ -13,6 +13,9 @@
 
     <!-- Prism.js for Syntax Highlighting -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+
+    <!-- EasyMDE -->
+    <link rel="stylesheet" href="https://unpkg.com/easymde/dist/easymde.min.css">
 </head>
 
 <body>
@@ -46,41 +49,67 @@
             }
         };
 
-        // Text manipulation helpers for code formatting toolbar
-        window.textAreaHelpers = {
-            // Insert text at cursor position
-            insertAtCursor: (elementId, textBefore, textAfter) => {
-                const textarea = document.getElementById(elementId);
-                if (!textarea) return '';
+        // EasyMDE and Marked Helpers
+        window.markdownHelpers = {
+            editors: {},
 
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                const selectedText = textarea.value.substring(start, end);
-                const before = textarea.value.substring(0, start);
-                const after = textarea.value.substring(end);
+            initEditor: (elementId, dotNetHelper, initialValue, placeholder) => {
+                if (window.markdownHelpers.editors[elementId]) {
+                    return;
+                }
 
-                // Insert the text
-                textarea.value = before + textBefore + selectedText + textAfter + after;
+                const easyMDE = new EasyMDE({
+                    element: document.getElementById(elementId),
+                    initialValue: initialValue || "",
+                    placeholder: placeholder || "",
+                    spellChecker: false,
+                    autosave: {
+                        enabled: false,
+                    },
+                    toolbar: [
+                        "bold", "italic", "heading", "|",
+                        "quote", "code", "unordered-list", "ordered-list", "|",
+                        "link", "image", "|",
+                        "preview", "side-by-side", "fullscreen", "|",
+                        "guide"
+                    ],
+                    status: false
+                });
 
-                // Set cursor position
-                const newCursorPos = start + textBefore.length + selectedText.length;
-                textarea.selectionStart = newCursorPos;
-                textarea.selectionEnd = newCursorPos;
+                easyMDE.codemirror.on("change", () => {
+                    dotNetHelper.invokeMethodAsync('UpdateValue', easyMDE.value());
+                });
 
-                // Trigger input event for Blazor binding
-                textarea.dispatchEvent(new Event('input', { bubbles: true }));
-                textarea.focus();
-
-                return textarea.value;
+                window.markdownHelpers.editors[elementId] = easyMDE;
             },
 
-            // Get current textarea value
-            getValue: (elementId) => {
-                const textarea = document.getElementById(elementId);
-                return textarea ? textarea.value : '';
+            updateEditorValue: (elementId, value) => {
+                const editor = window.markdownHelpers.editors[elementId];
+                if (editor && editor.value() !== value) {
+                    editor.value(value || "");
+                }
+            },
+
+            disposeEditor: (elementId) => {
+                const editor = window.markdownHelpers.editors[elementId];
+                if (editor) {
+                    editor.toTextArea();
+                    editor.cleanup();
+                    delete window.markdownHelpers.editors[elementId];
+                }
+            },
+
+            renderMarkdown: (content) => {
+                if (!window.marked) return content;
+                return window.marked.parse(content);
             }
         };
     </script>
+
+    <!-- EasyMDE JS -->
+    <script src="https://unpkg.com/easymde/dist/easymde.min.js"></script>
+    <!-- Marked JS -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <script src="_framework/blazor.webassembly.js"></script>
 </body>

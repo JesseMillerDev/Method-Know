@@ -53,8 +53,27 @@ else
                         @article.Title
                     </h3>
                     <p class="resource-description mb-4">
-                        @GetContentPreview(article.Content)
+                        @(string.IsNullOrWhiteSpace(article.Summary) ? GetContentPreview(article.Content) : article.Summary)
                     </p>
+
+                    <!-- Tags -->
+                    @if (article.TagList != null && article.TagList.Any())
+                    {
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            @foreach (var tag in article.TagList.Take(3))
+                            {
+                                <span class="px-2 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full">
+                                    @tag
+                                </span>
+                            }
+                            @if (article.TagList.Count > 3)
+                            {
+                                <span class="px-2 py-1 text-xs font-medium text-gray-500 bg-gray-50 rounded-full">
+                                    +@(article.TagList.Count - 3)
+                                </span>
+                            }
+                        </div>
+                    }
                     
                     <!-- Date & Metadata -->
                     <div class="flex flex-wrap items-center gap-2 text-xs text-gray-500">
@@ -117,11 +136,31 @@ else
         const int maxLength = 150;
         if (string.IsNullOrEmpty(content))
             return "No content available";
+
+        // Simple Regex to strip Markdown
+        // Remove code blocks
+        var plainText = System.Text.RegularExpressions.Regex.Replace(content, @"```[\s\S]*?```", "");
+        // Remove inline code
+        plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"`[^`]*`", "");
+        // Remove headers
+        plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"^#+\s+", "", System.Text.RegularExpressions.RegexOptions.Multiline);
+        // Remove bold/italic
+        plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"(\*\*|__)(.*?)\1", "$2");
+        plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"(\*|_)(.*?)\1", "$2");
+        // Remove links [text](url) -> text
+        plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"\[([^\]]+)\]\([^\)]+\)", "$1");
+        // Remove images ![alt](url) -> alt
+        plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"!\[([^\]]*)\]\([^\)]+\)", "$1");
+        // Remove blockquotes
+        plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"^>\s+", "", System.Text.RegularExpressions.RegexOptions.Multiline);
+        
+        // Normalize whitespace
+        plainText = System.Text.RegularExpressions.Regex.Replace(plainText, @"\s+", " ").Trim();
+
+        if (plainText.Length <= maxLength)
+            return plainText;
             
-        if (content.Length <= maxLength)
-            return content;
-            
-        return content.Substring(0, maxLength) + "...";
+        return plainText.Substring(0, maxLength) + "...";
     }
 
     private string FormatDate(DateTime date)

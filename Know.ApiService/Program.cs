@@ -38,6 +38,9 @@ builder.Services.AddSingleton<OnnxEmbeddingService>();
 builder.Services.AddSingleton<BackgroundQueue>();
 builder.Services.AddHostedService<EmbeddingBackgroundService>();
 
+// Register Tagging Service
+builder.Services.AddSingleton<TaggingService>();
+
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_that_should_be_in_env_vars_and_long_enough";
 builder.Services.AddAuthentication(options =>
@@ -114,8 +117,15 @@ app.MapPost("/api/auth/login", async (AuthService authService, [FromBody] LoginR
 .WithName("Login");
 
 // Endpoints
-app.MapPost("/api/articles", async (Article article, VectorDbService vectorService, BackgroundQueue queue) =>
+app.MapPost("/api/articles", async (Article article, VectorDbService vectorService, BackgroundQueue queue, TaggingService taggingService) =>
 {
+    // Generate tags
+    var tags = await taggingService.GenerateTagsAsync($"{article.Title} {article.Content}");
+    article.TagList = tags;
+    
+    // Generate summary
+    article.Summary = await taggingService.GenerateSummaryAsync(article.Content);
+
     // Create article without vector first (fast)
     var createdArticle = await vectorService.CreateArticleAsync(article, null);
     
@@ -126,15 +136,22 @@ app.MapPost("/api/articles", async (Article article, VectorDbService vectorServi
 .WithName("CreateArticle")
 .RequireAuthorization();
 
-app.MapPut("/api/articles/{id}", async (int id, Article article, VectorDbService vectorService, OnnxEmbeddingService embeddingService, HttpContext httpContext) =>
+app.MapPut("/api/articles/{id}", async (int id, Article article, VectorDbService vectorService, BackgroundQueue queue, TaggingService taggingService, HttpContext httpContext) =>
 {
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
-    var textToEmbed = $"{article.Title} {article.Content}";
-    var vector = await embeddingService.GenerateEmbeddingAsync(textToEmbed);
+    // Generate tags (update them)
+    var tags = await taggingService.GenerateTagsAsync($"{article.Title} {article.Content}");
+    article.TagList = tags;
 
-    var (status, updatedArticle) = await vectorService.UpdateArticleAsync(id, article, vector, userId);
+    var (status, updatedArticle) = await vectorService.UpdateArticleAsync(id, article, null, userId);
+    
+    // Queue for background embedding generation (update)
+    if (status == OperationResult.Success)
+    {
+        await queue.EnqueueAsync(id);
+    }
 
     return status switch
     {

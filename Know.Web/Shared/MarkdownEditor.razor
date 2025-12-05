@@ -1,0 +1,52 @@
+@inject IJSRuntime JSRuntime
+@implements IDisposable
+
+<textarea id="@Id" class="hidden"></textarea>
+
+@code {
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    
+    private string Id { get; } = $"markdown-editor-{Guid.NewGuid()}";
+    private DotNetObjectReference<MarkdownEditor>? _dotNetHelper;
+    private bool _isInitialized;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetHelper = DotNetObjectReference.Create(this);
+            await JSRuntime.InvokeVoidAsync("markdownHelpers.initEditor", Id, _dotNetHelper, Value, Placeholder);
+            _isInitialized = true;
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_isInitialized)
+        {
+            // Only update if the value has changed externally to avoid cursor jumping or loops
+            // Ideally, we'd check if the change originated from JS, but for now we rely on the JS helper
+            // to only update if values differ.
+            await JSRuntime.InvokeVoidAsync("markdownHelpers.updateEditorValue", Id, Value);
+        }
+    }
+
+    [JSInvokable]
+    public async Task UpdateValue(string value)
+    {
+        if (Value != value)
+        {
+            Value = value;
+            await ValueChanged.InvokeAsync(value);
+        }
+    }
+
+    public void Dispose()
+    {
+        _dotNetHelper?.Dispose();
+        // Fire and forget disposal
+        _ = JSRuntime.InvokeVoidAsync("markdownHelpers.disposeEditor", Id);
+    }
+}
