@@ -18,7 +18,7 @@ public class TaggingService : IDisposable
     {
         _logger = logger;
         // Assume model is in Models folder, similar to embedding model
-        _modelPath = Path.Combine(env.ContentRootPath, "Models", "Phi-3-mini-4k-instruct.Q4_K_M.gguf"); 
+        _modelPath = Path.Combine(env.ContentRootPath, "Models", "Llama-3.2-3B-Instruct-Q4_K_M.gguf"); 
 
         if (!File.Exists(_modelPath))
         {
@@ -44,25 +44,27 @@ public class TaggingService : IDisposable
         using var context = _model.CreateContext(parameters);
         var executor = new InteractiveExecutor(context);
 
-        var prompt = $@"
+        // Llama 3 Prompt Format
+        var prompt = $@"<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
 You are a strict technical tagging assistant.
 Identify the top 3-5 most relevant technical topics, technologies, or frameworks in the text.
 Output ONLY a JSON array of strings.
 Do NOT output any other text, explanation, or markdown formatting.
 Do NOT use stop words (e.g. 'the', 'and', 'a').
 
-Example Output: [""C#"", "".NET"", ""Web API""]
+Example Output: [""C#"", "".NET"", ""Web API""]<|eot_id|><|start_header_id|>user<|end_header_id|>
 
 Text:
 {content}
 
-Tags:
+Tags:<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 ";
 
         var inferenceParams = new InferenceParams()
         {
             SamplingPipeline = new DefaultSamplingPipeline { Temperature = 0.1f },
-            AntiPrompts = new List<string> { "Text:", "Tags:" },
+            AntiPrompts = new List<string> { "<|eot_id|>" },
             MaxTokens = 100
         };
 
@@ -84,22 +86,24 @@ Tags:
         using var context = _model.CreateContext(parameters);
         var executor = new InteractiveExecutor(context);
 
-        var prompt = $@"
+        // Llama 3 Prompt Format
+        var prompt = $@"<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
 You are a helpful assistant that summarizes technical articles.
 Create a concise 2-sentence summary of the following text.
 Do not include any introductory text like ""Here is a summary"".
-Just return the summary itself.
+Just return the summary itself.<|eot_id|><|start_header_id|>user<|end_header_id|>
 
 Text:
 {content}
 
-Summary:
+Summary:<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 ";
 
         var inferenceParams = new InferenceParams()
         {
             SamplingPipeline = new DefaultSamplingPipeline { Temperature = 0.2f },
-            AntiPrompts = new List<string> { "Text:", "Summary:" },
+            AntiPrompts = new List<string> { "<|eot_id|>" },
             MaxTokens = 150
         };
 
