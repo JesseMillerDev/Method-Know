@@ -10,8 +10,6 @@ public class TaggingService : IDisposable
 {
     private readonly string _modelPath;
     private readonly LLamaWeights? _model;
-    private readonly LLamaContext? _context;
-    private readonly InteractiveExecutor? _executor;
     private readonly ILogger<TaggingService> _logger;
 
     public TaggingService(IConfiguration configuration, IWebHostEnvironment env, ILogger<TaggingService> logger)
@@ -49,6 +47,10 @@ public class TaggingService : IDisposable
 
         try
         {
+            // Truncate content to avoid context window overflow (ContextSize = 2048)
+            // 2048 tokens is roughly 6000-8000 chars. Let's be safe with 6000.
+            var safeContent = Truncate(content, 6000);
+
             // Create a context for this specific request to ensure isolation
             var parameters = new ModelParams(_modelPath) { ContextSize = 2048, GpuLayerCount = 0 };
             using var context = _model.CreateContext(parameters);
@@ -66,7 +68,7 @@ Do NOT use stop words (e.g. 'the', 'and', 'a').
 Example Output: [""C#"", "".NET"", ""Web API""]<|eot_id|><|start_header_id|>user<|end_header_id|>
 
 Text:
-{content}
+{safeContent}
 
 Tags:<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 ";
@@ -99,13 +101,16 @@ Tags:<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 
         try
         {
+            // Truncate content to avoid context window overflow
+            var safeContent = Truncate(content, 6000);
+
             // Create a context for this specific request to ensure isolation
             var parameters = new ModelParams(_modelPath) { ContextSize = 2048, GpuLayerCount = 0 };
             using var context = _model.CreateContext(parameters);
             var executor = new InteractiveExecutor(context);
 
             // Llama 3 Prompt Format
-            var prompt = $@"<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+            var prompt = $@"<|start_header_id|>system<|end_header_id|>
 
 You are a helpful assistant that summarizes technical articles.
 Create a concise 2-sentence summary of the following text.
@@ -113,7 +118,7 @@ Do not include any introductory text like ""Here is a summary"".
 Just return the summary itself.<|eot_id|><|start_header_id|>user<|end_header_id|>
 
 Text:
-{content}
+{safeContent}
 
 Summary:<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 ";
@@ -138,6 +143,12 @@ Summary:<|eot_id|><|start_header_id|>assistant<|end_header_id|>
             _logger.LogError(ex, "Failed to generate summary (likely OOM). Skipping summary.");
             return "";
         }
+    }
+
+    private string Truncate(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text)) return text;
+        return text.Length <= maxLength ? text : text.Substring(0, maxLength);
     }
 
     private List<string> ParseAndNormalizeTags(string llmOutput)
@@ -269,7 +280,6 @@ Summary:<|eot_id|><|start_header_id|>assistant<|end_header_id|>
 
     public void Dispose()
     {
-        _context?.Dispose();
         _model?.Dispose();
     }
 }

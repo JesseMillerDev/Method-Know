@@ -117,37 +117,47 @@ app.MapPost("/api/auth/login", async (AuthService authService, [FromBody] LoginR
 .WithName("Login");
 
 // Endpoints
-app.MapPost("/api/articles", async (Article article, VectorDbService vectorService, BackgroundQueue queue, TaggingService taggingService) =>
+app.MapPost("/api/articles", async (Article article, VectorDbService vectorService, BackgroundQueue queue) =>
 {
-    // Generate tags
-    var tags = await taggingService.GenerateTagsAsync($"{article.Title} {article.Content}");
-    article.TagList = tags;
-    
-    // Generate summary
-    article.Summary = await taggingService.GenerateSummaryAsync(article.Content);
-
     // Create article without vector first (fast)
+    // Tags and Summary will be generated in background
     var createdArticle = await vectorService.CreateArticleAsync(article, null);
     
-    // Queue for background embedding generation
+    // Queue for background processing (Tagging -> Summary -> Embedding)
     await queue.EnqueueAsync(createdArticle.Id);
     return Results.Created($"/api/articles/{createdArticle.Id}", createdArticle);
 })
 .WithName("CreateArticle")
 .RequireAuthorization();
 
-app.MapPut("/api/articles/{id}", async (int id, Article article, VectorDbService vectorService, BackgroundQueue queue, TaggingService taggingService, HttpContext httpContext) =>
+app.MapPut("/api/articles/{id}", async (int id, Article article, VectorDbService vectorService, BackgroundQueue queue, HttpContext httpContext) =>
 {
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
-    // Generate tags (update them)
-    var tags = await taggingService.GenerateTagsAsync($"{article.Title} {article.Content}");
-    article.TagList = tags;
+    // Tags will be updated in background if needed, or we can choose to NOT update tags on edit to preserve manual edits.
+    // For now, let's assume we want to re-generate tags if content changed, but we can't easily detect that here without fetching first.
+    // The user might have manually edited tags, so we shouldn't overwrite them blindly.
+    // However, the background service checks "if missing or empty". 
+    // If we want to force re-tagging on edit, we'd need to clear them.
+    // Let's leave tags as-is for now on edit, or maybe clear them if the user wants?
+    // Actually, the previous code ALWAYS re-generated tags on edit.
+    // To match that behavior, we should clear the tags so the background service sees them as empty?
+    // Or better: The background service logic I wrote only checks `if (article.TagList == null || !article.TagList.Any())`.
+    // So if we want re-tagging, we must clear them here.
+    
+    // BUT: If the user *manually* edited tags in the UI (which they can't do yet, but might), we'd lose them.
+    // Given the previous code forced re-tagging, I will maintain that behavior by clearing the tags in the object passed to UpdateArticleAsync.
+    // Wait, UpdateArticleAsync updates the DB with `updatedArticle`.
+    // So if I set `article.TagList = null` here, it saves null to DB, then background service sees null and re-generates.
+    // Perfect.
+    
+    article.TagList = new List<string>(); 
+    article.Summary = null; // Re-generate summary too
 
     var (status, updatedArticle) = await vectorService.UpdateArticleAsync(id, article, null, userId);
     
-    // Queue for background embedding generation (update)
+    // Queue for background processing
     if (status == OperationResult.Success)
     {
         await queue.EnqueueAsync(id);
