@@ -1,4 +1,10 @@
-﻿<div class="px-4 space-y-6">
+﻿@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@using System.Net.Http.Headers
+@using Microsoft.AspNetCore.WebUtilities
+
+<div class="px-4 space-y-6">
     <!-- Main Navigation Section -->
     <div>
         <h3 class="text-xs font-semibold text-white text-opacity-50 uppercase tracking-wider mb-3 px-3">Navigation</h3>
@@ -51,31 +57,100 @@
 
     <!-- Tags Section -->
     <div>
-        <h3 class="text-xs font-semibold text-white text-opacity-50 uppercase tracking-wider mb-3 px-3">Filter by Level</h3>
-        <div class="space-y-1">
-            <label class="flex items-center px-3 py-2 text-sm font-medium cursor-pointer sidebar-nav-item">
-                <input type="checkbox" class="form-checkbox h-4 w-4 text-white bg-white bg-opacity-10 border-white border-opacity-30 rounded focus:ring-white focus:ring-opacity-50 mr-3" />
-                Beginner
-            </label>
-            <label class="flex items-center px-3 py-2 text-sm font-medium cursor-pointer sidebar-nav-item">
-                <input type="checkbox" class="form-checkbox h-4 w-4 text-white bg-white bg-opacity-10 border-white border-opacity-30 rounded focus:ring-white focus:ring-opacity-50 mr-3" />
-                Advanced
-            </label>
-            <label class="flex items-center px-3 py-2 text-sm font-medium cursor-pointer sidebar-nav-item">
-                <input type="checkbox" class="form-checkbox h-4 w-4 text-white bg-white bg-opacity-10 border-white border-opacity-30 rounded focus:ring-white focus:ring-opacity-50 mr-3" />
-                Video Content
-            </label>
+        <h3 class="text-xs font-semibold text-white text-opacity-50 uppercase tracking-wider mb-3 px-3">Popular Tags</h3>
+        <div class="px-3 flex flex-wrap gap-2">
+            @if (tags == null)
+            {
+                <p class="text-xs text-white text-opacity-50">Loading tags...</p>
+            }
+            else if (!tags.Any())
+            {
+                <p class="text-xs text-white text-opacity-50">No tags found.</p>
+            }
+            else
+            {
+                @foreach (var tag in tags)
+                {
+                    <button @onclick="() => FilterByTag(tag)" 
+                            class="px-2 py-1 text-xs font-medium rounded-full transition-colors @(selectedTag == tag ? "bg-white text-black" : "bg-white bg-opacity-10 text-white hover:bg-opacity-20")">
+                        @tag
+                    </button>
+                }
+            }
         </div>
     </div>
 </div>
 
 @code {
     private bool collapseNavMenu = true;
+    private List<string>? tags;
+    private string? selectedTag;
 
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+             var token = await LocalStorage.GetItemAsync<string>("authToken");
+             if (!string.IsNullOrEmpty(token))
+             {
+                 Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+             }
+             tags = await Http.GetFromJsonAsync<List<string>>("/api/tags");
+             
+             // Check query param initially
+             var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+             if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("tag", out var tagVal))
+             {
+                 selectedTag = tagVal;
+             }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading tags: {ex.Message}");
+            tags = new List<string>();
+        }
+        
+        Navigation.LocationChanged += HandleLocationChanged;
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        var uri = Navigation.ToAbsoluteUri(e.Location);
+        if (Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query).TryGetValue("tag", out var tagVal))
+        {
+            selectedTag = tagVal;
+        }
+        else
+        {
+            selectedTag = null;
+        }
+        StateHasChanged();
+    }
+
+    private void FilterByTag(string tag)
+    {
+        if (selectedTag == tag)
+        {
+            selectedTag = null;
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            selectedTag = tag;
+            Navigation.NavigateTo($"/?tag={Uri.EscapeDataString(tag)}");
+        }
+    }
+    
     private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
 
     private void ToggleNavMenu()
     {
         collapseNavMenu = !collapseNavMenu;
     }
+    
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= HandleLocationChanged;
+    }
 }
+

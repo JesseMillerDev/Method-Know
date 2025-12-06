@@ -345,4 +345,29 @@ public class VectorDbService
 
         return OperationResult.Success;
     }
+    public async Task<List<string>> GetAllTagsAsync()
+    {
+        var tagsJson = await _dbContext.Articles
+            .Select(a => a.Tags)
+            .ToListAsync();
+
+        var allTags = tagsJson
+            .SelectMany(t => 
+            {
+                try 
+                {
+                    return System.Text.Json.JsonSerializer.Deserialize<List<string>>(t) ?? new List<string>();
+                }
+                catch
+                {
+                    return new List<string>();
+                }
+            })
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(t => t)
+            .ToList();
+
+        return allTags;
+    }
 }

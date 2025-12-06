@@ -76,6 +76,9 @@ else
     [SupplyParameterFromQuery]
     public string? Category { get; set; }
 
+    [SupplyParameterFromQuery]
+    public string? Tag { get; set; }
+
     private string? userId;
     
     // Modal state
@@ -142,6 +145,13 @@ else
             {
                 filtered = filtered.Where(a => 
                     string.Equals(a.Category, selectedCategory, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Filter by tag
+            if (!string.IsNullOrEmpty(Tag))
+            {
+                filtered = filtered.Where(a => 
+                    a.TagList.Contains(Tag, StringComparer.OrdinalIgnoreCase));
             }
             
             // Filter by search query

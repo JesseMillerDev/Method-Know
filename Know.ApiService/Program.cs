@@ -232,6 +232,14 @@ app.MapGet("/api/users/{userId}/articles", async (string userId, VectorDbService
 .WithName("GetUserArticles")
 .RequireAuthorization();
 
+app.MapGet("/api/tags", async (VectorDbService vectorService) =>
+{
+    var tags = await vectorService.GetAllTagsAsync();
+    return Results.Ok(tags);
+})
+.WithName("GetAllTags")
+.RequireAuthorization();
+
 app.MapProfileEndpoints();
 
 app.Run();
