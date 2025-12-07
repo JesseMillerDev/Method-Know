@@ -357,7 +357,7 @@
 
     /* Premium Resource Card */
     .resource-card {
-        @apply relative bg-white rounded-2xl p-6 transition-all duration-300;
+        @apply relative bg-white rounded-2xl p-8 transition-all duration-300 flex flex-col min-h-[24rem];
         background: rgba(255, 255, 255, 0.85);
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
