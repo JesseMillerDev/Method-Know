@@ -223,6 +223,25 @@ public class VectorDbService
         return articles;
     }
 
+    public async Task<Article?> GetArticleByIdAsync(int id, string? userId = null)
+    {
+        var article = await _dbContext.Articles.FindAsync(id);
+
+        if (article != null && userId != null)
+        {
+            var vote = await _dbContext.ArticleVotes
+                .FirstOrDefaultAsync(v => v.ArticleId == id && v.UserId == userId);
+            
+            if (vote != null)
+            {
+                article.IsVoted = true;
+                article.UserVoteValue = vote.VoteValue;
+            }
+        }
+
+        return article;
+    }
+
     public async Task<IEnumerable<Article>> GetAllArticlesAsync(string? userId = null)
     {
         var articles = await _dbContext.Articles

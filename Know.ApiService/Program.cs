@@ -191,6 +191,17 @@ app.MapGet("/api/articles", async (VectorDbService vectorService, HttpContext ht
 .WithName("GetAllArticles")
 .RequireAuthorization();
 
+app.MapGet("/api/articles/{id}", async (int id, VectorDbService vectorService, HttpContext httpContext) =>
+{
+    var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var article = await vectorService.GetArticleByIdAsync(id, userId);
+    
+    if (article == null) return Results.NotFound();
+    
+    return Results.Ok(article);
+})
+.WithName("GetArticleById");
+
 app.MapDelete("/api/articles/{id}", async (int id, VectorDbService vectorService, HttpContext httpContext) =>
 {
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;

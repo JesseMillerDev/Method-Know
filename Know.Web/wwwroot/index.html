@@ -101,7 +101,7 @@
 
             renderMarkdown: (content) => {
                 if (!window.marked) return content;
-                return window.marked.parse(content);
+                return window.marked.parse(content, { breaks: true, gfm: true });
             }
         };
     </script>

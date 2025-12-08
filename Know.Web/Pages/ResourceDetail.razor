@@ -1,0 +1,372 @@
+@page "/resource/{Id:int}"
+@using Know.Shared.Models
+@using Know.Web.Shared
+@using System.Net
+@using Microsoft.AspNetCore.Components.Authorization
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+<div class="min-h-screen bg-gray-50 pb-12">
+    <!-- Header -->
+    <div class="bg-white border-b border-gray-200 sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-4">
+                    <button @onclick="GoBack" class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+                        </svg>
+                    </button>
+                    <nav class="hidden sm:flex items-center text-sm font-medium text-gray-500">
+                        <a href="/" class="hover:text-gray-900 transition-colors">Home</a>
+                        <svg class="h-5 w-5 text-gray-300 mx-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
+                        </svg>
+                        <span class="text-gray-900 truncate max-w-[200px]">@(article?.Title ?? "Loading...")</span>
+                    </nav>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    @if (IsOwner && !isEditing)
+                    {
+                        <button @onclick="BeginEdit" class="secondary-button flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                            </svg>
+                            Edit
+                        </button>
+                        <button @onclick="ConfirmDelete" class="secondary-button text-red-600 border-red-200 hover:border-red-300 hover:bg-red-50 flex items-center gap-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                            </svg>
+                            Delete
+                        </button>
+                    }
+                    else if (isEditing)
+                    {
+                        <button @onclick="CancelEdit" class="secondary-button" disabled="@isSubmitting">Cancel</button>
+                        <button @onclick="SaveEdit" class="premium-button flex items-center gap-2" disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <div class="spinner w-4 h-4 border-2"></div>
+                                <span>Saving...</span>
+                            }
+                            else
+                            {
+                                <span>Save Changes</span>
+                            }
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        @if (isLoading)
+        {
+            <div class="flex justify-center items-center h-64">
+                <div class="spinner w-8 h-8 border-4 border-indigo-600 border-t-transparent"></div>
+            </div>
+        }
+        else if (article == null)
+        {
+            <div class="text-center py-12">
+                <h3 class="text-lg font-medium text-gray-900">Resource not found</h3>
+                <p class="mt-2 text-gray-500">The resource you are looking for does not exist or has been removed.</p>
+                <div class="mt-6">
+                    <a href="/" class="premium-button">Go Home</a>
+                </div>
+            </div>
+        }
+        else if (isEditing)
+        {
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div class="p-6 sm:p-8 space-y-6">
+                    <!-- Edit Form -->
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">
+                            Title <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" @bind="editArticle.Title" class="premium-input text-lg font-medium" placeholder="Enter article title..." />
+                        @if (showValidation && string.IsNullOrWhiteSpace(editArticle.Title))
+                        {
+                            <p class="mt-1 text-sm text-red-600">Title is required</p>
+                        }
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">
+                            Category <span class="text-red-500">*</span>
+                        </label>
+                        <select @bind="editArticle.Category" class="premium-select">
+                            <option value="">Select a category...</option>
+                            <option value="Documentation">Documentation</option>
+                            <option value="Tutorials">Tutorials</option>
+                            <option value="Articles">Articles</option>
+                        </select>
+                        @if (showValidation && string.IsNullOrWhiteSpace(editArticle.Category))
+                        {
+                            <p class="mt-1 text-sm text-red-600">Category is required</p>
+                        }
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-900 mb-2">
+                            Content <span class="text-red-500">*</span>
+                        </label>
+                        <div class="min-h-[500px]">
+                            <MarkdownEditor @bind-Value="editArticle.Content" Placeholder="Write your content here..." />
+                        </div>
+                        @if (showValidation && string.IsNullOrWhiteSpace(editArticle.Content))
+                        {
+                            <p class="mt-1 text-sm text-red-600">Content is required</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- View Mode -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <!-- Article Header -->
+                <div class="px-6 sm:px-8 py-8 border-b border-gray-100 bg-gradient-to-b from-gray-50/50">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="px-3 py-1 text-xs font-semibold tracking-wide uppercase text-indigo-700 bg-indigo-50 rounded-full border border-indigo-100">
+                            @article.Category
+                        </span>
+                        <span class="text-sm text-gray-500">@FormatDate(article.CreatedAt)</span>
+                    </div>
+                    
+                    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 leading-tight">@article.Title</h1>
+                    
+                    @if (article.TagList != null && article.TagList.Any())
+                    {
+                        <div class="flex flex-wrap gap-2">
+                            @foreach (var tag in article.TagList)
+                            {
+                                <span class="px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full border border-gray-200">
+                                    #@tag
+                                </span>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Article Content -->
+                <div class="px-6 sm:px-8 py-8">
+                    <div class="prose prose-lg max-w-none prose-indigo prose-headings:font-bold prose-a:text-indigo-600 hover:prose-a:text-indigo-500">
+                        <MarkdownRenderer Content="@article.Content" />
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Toast Notifications -->
+@if (showToast)
+{
+    <div class="toast-notification @toastType">
+        <div class="toast-icon">
+            @if (toastType == "success")
+            {
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            }
+            else
+            {
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+            }
+        </div>
+        <div class="toast-message">@toastMessage</div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Article? article;
+    private Article editArticle = new();
+    private bool isLoading = true;
+    private bool isEditing = false;
+    private bool isSubmitting = false;
+    private bool showValidation = false;
+    private string? currentUserId;
+
+    // Toast state
+    private bool showToast = false;
+    private string toastType = "";
+    private string toastMessage = "";
+
+    private bool IsOwner => article != null && !string.IsNullOrEmpty(currentUserId) && article.UserId == currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+            if (user.Identity?.IsAuthenticated ?? false)
+            {
+                // Assuming "sub" claim is used for ID, adjust if needed based on your auth setup
+                currentUserId = user.FindFirst(c => c.Type == "sub")?.Value ?? user.FindFirst(c => c.Type == System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            }
+
+            await LoadArticle();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading article: {ex.Message}");
+            ShowToast("error", "Failed to load resource.");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadArticle()
+    {
+        article = await Http.GetFromJsonAsync<Article>($"/api/articles/{Id}");
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/");
+    }
+
+    private void BeginEdit()
+    {
+        if (article == null) return;
+        
+        editArticle = new Article
+        {
+            Id = article.Id,
+            Title = article.Title,
+            Content = article.Content,
+            Category = article.Category,
+            UserId = article.UserId,
+            CreatedAt = article.CreatedAt,
+            TagList = article.TagList
+        };
+        
+        isEditing = true;
+        showValidation = false;
+    }
+
+    private void CancelEdit()
+    {
+        isEditing = false;
+        editArticle = new();
+    }
+
+    private async Task SaveEdit()
+    {
+        showValidation = true;
+
+        if (string.IsNullOrWhiteSpace(editArticle.Title) || 
+            string.IsNullOrWhiteSpace(editArticle.Content) || 
+            string.IsNullOrWhiteSpace(editArticle.Category))
+        {
+            return;
+        }
+
+        isSubmitting = true;
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync($"/api/articles/{editArticle.Id}", editArticle);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var updatedArticle = await response.Content.ReadFromJsonAsync<Article>();
+                if (updatedArticle != null)
+                {
+                    article = updatedArticle;
+                }
+                
+                ShowToast("success", "Resource updated successfully!");
+                isEditing = false;
+            }
+            else
+            {
+                ShowToast("error", "Failed to update resource.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating article: {ex.Message}");
+            ShowToast("error", "An error occurred.");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private async Task ConfirmDelete()
+    {
+        if (article == null) return;
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this resource?");
+        if (!confirmed) return;
+
+        try
+        {
+            var response = await Http.DeleteAsync($"/api/articles/{article.Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                ShowToast("success", "Resource deleted successfully.");
+                await Task.Delay(1000);
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                ShowToast("error", "Failed to delete resource.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error deleting article: {ex.Message}");
+            ShowToast("error", "An error occurred.");
+        }
+    }
+
+    private void ShowToast(string type, string message)
+    {
+        toastType = type;
+        toastMessage = message;
+        showToast = true;
+        StateHasChanged();
+
+        Task.Run(async () =>
+        {
+            await Task.Delay(3000);
+            showToast = false;
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    private string FormatDate(DateTime date)
+    {
+        var timeSpan = DateTime.UtcNow - date;
+        
+        if (timeSpan.TotalDays < 1)
+            return "Today";
+        else if (timeSpan.TotalDays < 2)
+            return "Yesterday";
+        else if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays} days ago";
+        else if (timeSpan.TotalDays < 30)
+            return $"{(int)(timeSpan.TotalDays / 7)} weeks ago";
+        else
+            return date.ToString("MMM dd, yyyy");
+    }
+}
