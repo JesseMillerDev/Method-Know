@@ -8,10 +8,10 @@
 <div class="max-w-3xl mx-auto px-4 md:px-6 py-12 fade-in">
     <div class="flex items-center justify-between mb-12">
         <div>
-            <h1 class="text-4xl font-bold text-black tracking-tight mb-2">Your Profile</h1>
-            <p class="text-gray-500">Manage your personal information and preferences.</p>
+            <h1 class="text-4xl font-bold text-black dark:text-white tracking-tight mb-2">Your Profile</h1>
+            <p class="text-gray-500 dark:text-gray-400">Manage your personal information and preferences.</p>
         </div>
-        <div class="hidden md:block h-12 w-12 bg-black rounded-full opacity-5"></div>
+        <div class="hidden md:block h-12 w-12 bg-black dark:bg-white rounded-full opacity-5"></div>
     </div>
 
     @if (isLoading)
@@ -30,7 +30,7 @@
     {
         <div class="glass-card rounded-2xl p-5 md:p-10 relative overflow-hidden">
             <!-- Decorative background element -->
-            <div class="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full blur-3xl opacity-50"></div>
+            <div class="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-slate-800 dark:to-slate-700 rounded-full blur-3xl opacity-50"></div>
 
             <div class="flex flex-col md:flex-row items-center gap-8 mb-12 relative z-10">
                 <div class="relative group">
@@ -40,8 +40,8 @@
                     <div class="absolute bottom-0 right-0 h-8 w-8 bg-green-500 rounded-full border-4 border-white"></div>
                 </div>
                 <div class="text-center md:text-left">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-1">@user.Email</h2>
-                    <div class="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-1">@user.Email</h2>
+                    <div class="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">
                         Member
                     </div>
                 </div>
@@ -53,18 +53,18 @@
 
                 <div class="space-y-8 max-w-2xl">
                     <div class="group">
-                        <label for="bio" class="block mb-3 text-xs font-bold text-gray-500 uppercase tracking-widest group-focus-within:text-black transition-colors">Bio</label>
+                        <label for="bio" class="block mb-3 text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-widest group-focus-within:text-black dark:group-focus-within:text-white transition-colors">Bio</label>
                         <InputTextArea id="bio" @bind-Value="user.Bio" class="premium-input min-h-[140px] resize-none" placeholder="Tell us a bit about yourself..."></InputTextArea>
                     </div>
 
                     <div class="group">
-                        <label for="interests" class="block mb-3 text-xs font-bold text-gray-500 uppercase tracking-widest group-focus-within:text-black transition-colors">Interests</label>
+                        <label for="interests" class="block mb-3 text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-widest group-focus-within:text-black dark:group-focus-within:text-white transition-colors">Interests</label>
                         <InputText id="interests" @bind-Value="user.Interests" class="premium-input" placeholder="e.g. Coding, Design, AI"></InputText>
                         <p class="mt-2 text-xs text-gray-400">Separate multiple interests with commas.</p>
                     </div>
 
                     <div class="group">
-                        <label for="notifications" class="block mb-3 text-xs font-bold text-gray-500 uppercase tracking-widest group-focus-within:text-black transition-colors">Notification Preferences</label>
+                        <label for="notifications" class="block mb-3 text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-widest group-focus-within:text-black dark:group-focus-within:text-white transition-colors">Notification Preferences</label>
                         <div class="relative">
                             <InputSelect id="notifications" @bind-Value="user.NotificationPreferences" class="premium-input appearance-none cursor-pointer">
                                 <option value="All">All Notifications</option>
@@ -77,7 +77,7 @@
                         </div>
                     </div>
 
-                    <div class="pt-6 border-t border-gray-100">
+                    <div class="pt-6 border-t border-gray-100 dark:border-slate-800">
                         <button type="submit" class="premium-button w-full md:w-auto md:px-8">
                             <span>Save Changes</span>
                         </button>

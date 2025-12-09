@@ -12,26 +12,26 @@
     <div class="mb-8 flex flex-col items-center text-center">
         <div class="relative mb-6 h-24 w-24">
             <!-- Ellipse Background -->
-            <div class="absolute inset-0 rounded-full bg-blue-50"></div>
+            <div class="absolute inset-0 rounded-full bg-blue-50 dark:bg-blue-900/20"></div>
             <!-- Icon -->
             <div class="absolute inset-0 flex items-center justify-center">
-                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-900">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-900 dark:text-white">
                     <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
                 </svg>
             </div>
         </div>
         
-        <h2 class="mb-2 text-[30px] font-semibold leading-[36px] tracking-[-0.225px] text-slate-900 font-['Inter']">
+        <h2 class="mb-2 text-[30px] font-semibold leading-[36px] tracking-[-0.225px] text-slate-900 dark:text-white font-['Inter']">
             Welcome Back
         </h2>
-        <p class="text-[20px] font-normal leading-[28px] tracking-[-0.1px] text-slate-900 font-['Inter']">
+        <p class="text-[20px] font-normal leading-[28px] tracking-[-0.1px] text-slate-900 dark:text-slate-300 font-['Inter']">
             Share and discover valuable learning resources
         </p>
     </div>
 
     <!-- Login Card -->
     <div class="w-full max-w-[480px]">
-        <div class="bg-white px-10 py-12 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.06),0px_1px_3px_0px_rgba(0,0,0,0.10)] sm:rounded-xl border border-[rgba(0,0,0,0.12)]">
+        <div class="bg-white dark:bg-slate-900 px-10 py-12 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.06),0px_1px_3px_0px_rgba(0,0,0,0.10)] sm:rounded-xl border border-[rgba(0,0,0,0.12)] dark:border-slate-800">
             <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" class="space-y-6">
                 <DataAnnotationsValidator />
                 
@@ -79,9 +79,9 @@
                 </div>
             </EditForm>
 
-            <div class="mt-8 flex items-center justify-center gap-1 text-[16px] text-slate-900">
+            <div class="mt-8 flex items-center justify-center gap-1 text-[16px] text-slate-900 dark:text-slate-300">
                 <span>Don't have an account?</span>
-                <a href="signup" class="font-semibold hover:underline">Sign up</a>
+                <a href="signup" class="font-semibold hover:underline text-slate-900 dark:text-white">Sign up</a>
             </div>
         </div>
     </div>

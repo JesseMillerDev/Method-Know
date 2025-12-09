@@ -17,6 +17,7 @@ builder.Services.AddScoped(sp =>
 builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddAuthorizationCore();
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+builder.Services.AddScoped<Know.Web.Services.ThemeService>();
 builder.Services.AddScoped<Know.Web.Services.AppState>();
 
 await builder.Build().RunAsync();

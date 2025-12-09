@@ -8,23 +8,23 @@
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
-<div class="min-h-screen bg-gray-50 pb-12">
+<div class="min-h-screen bg-gray-50 dark:bg-slate-950 pb-12">
     <!-- Header -->
-    <div class="bg-white border-b border-gray-200 sticky top-0 z-30">
+    <div class="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-800 sticky top-0 z-30">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <div class="flex items-center gap-4">
-                    <button @onclick="GoBack" class="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors">
+                    <button @onclick="GoBack" class="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-full transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
                         </svg>
                     </button>
-                    <nav class="hidden sm:flex items-center text-sm font-medium text-gray-500">
-                        <a href="/" class="hover:text-gray-900 transition-colors">Home</a>
+                    <nav class="hidden sm:flex items-center text-sm font-medium text-gray-500 dark:text-gray-400">
+                        <a href="/" class="hover:text-gray-900 dark:hover:text-white transition-colors">Home</a>
                         <svg class="h-5 w-5 text-gray-300 mx-2" fill="currentColor" viewBox="0 0 20 20">
                             <path d="M5.555 17.776l8-16 .894.448-8 16-.894-.448z" />
                         </svg>
-                        <span class="text-gray-900 truncate max-w-[200px]">@(article?.Title ?? "Loading...")</span>
+                        <span class="text-gray-900 dark:text-white truncate max-w-[200px]">@(article?.Title ?? "Loading...")</span>
                     </nav>
                 </div>
 
@@ -74,8 +74,8 @@
         else if (article == null)
         {
             <div class="text-center py-12">
-                <h3 class="text-lg font-medium text-gray-900">Resource not found</h3>
-                <p class="mt-2 text-gray-500">The resource you are looking for does not exist or has been removed.</p>
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white">Resource not found</h3>
+                <p class="mt-2 text-gray-500 dark:text-gray-400">The resource you are looking for does not exist or has been removed.</p>
                 <div class="mt-6">
                     <a href="/" class="premium-button">Go Home</a>
                 </div>
@@ -83,11 +83,11 @@
         }
         else if (isEditing)
         {
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-hidden">
                 <div class="p-6 sm:p-8 space-y-6">
                     <!-- Edit Form -->
                     <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">
+                        <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                             Title <span class="text-red-500">*</span>
                         </label>
                         <input type="text" @bind="editArticle.Title" class="premium-input text-lg font-medium" placeholder="Enter article title..." />
@@ -98,7 +98,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">
+                        <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                             Category <span class="text-red-500">*</span>
                         </label>
                         <select @bind="editArticle.Category" class="premium-select">
@@ -114,7 +114,7 @@
                     </div>
 
                     <div>
-                        <label class="block text-sm font-semibold text-gray-900 mb-2">
+                        <label class="block text-sm font-semibold text-gray-900 dark:text-white mb-2">
                             Content <span class="text-red-500">*</span>
                         </label>
                         <div class="min-h-[500px]">
@@ -131,24 +131,24 @@
         else
         {
             <!-- View Mode -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-200 dark:border-slate-800 overflow-hidden">
                 <!-- Article Header -->
-                <div class="px-6 sm:px-8 py-8 border-b border-gray-100 bg-gradient-to-b from-gray-50/50">
+                <div class="px-6 sm:px-8 py-8 border-b border-gray-100 dark:border-slate-800 bg-gradient-to-b from-gray-50/50 dark:from-slate-800/50">
                     <div class="flex items-center gap-3 mb-4">
-                        <span class="px-3 py-1 text-xs font-semibold tracking-wide uppercase text-indigo-700 bg-indigo-50 rounded-full border border-indigo-100">
+                        <span class="px-3 py-1 text-xs font-semibold tracking-wide uppercase text-indigo-700 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 rounded-full border border-indigo-100 dark:border-indigo-800">
                             @article.Category
                         </span>
-                        <span class="text-sm text-gray-500">@FormatDate(article.CreatedAt)</span>
+                        <span class="text-sm text-gray-500 dark:text-gray-400">@FormatDate(article.CreatedAt)</span>
                     </div>
                     
-                    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 mb-6 leading-tight">@article.Title</h1>
+                    <h1 class="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-6 leading-tight">@article.Title</h1>
                     
                     @if (article.TagList != null && article.TagList.Any())
                     {
                         <div class="flex flex-wrap gap-2">
                             @foreach (var tag in article.TagList)
                             {
-                                <span class="px-2.5 py-1 text-xs font-medium text-gray-600 bg-gray-100 rounded-full border border-gray-200">
+                                <span class="px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 rounded-full border border-gray-200 dark:border-slate-700">
                                     #@tag
                                 </span>
                             }
@@ -158,7 +158,7 @@
 
                 <!-- Article Content -->
                 <div class="px-6 sm:px-8 py-8">
-                    <div class="prose prose-lg max-w-none prose-indigo prose-headings:font-bold prose-a:text-indigo-600 hover:prose-a:text-indigo-500">
+                    <div class="prose prose-lg max-w-none prose-indigo dark:prose-invert prose-headings:font-bold prose-a:text-indigo-600 dark:prose-a:text-indigo-400 hover:prose-a:text-indigo-500 dark:hover:prose-a:text-indigo-300">
                         <MarkdownRenderer Content="@article.Content" />
                     </div>
                 </div>
