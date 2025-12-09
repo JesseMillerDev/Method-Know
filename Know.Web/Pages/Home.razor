@@ -2,55 +2,107 @@
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
 @using System.Net.Http.Headers
+@using Know.Web.Services
+@implements IDisposable
 
 @attribute [Authorize]
 @inject HttpClient Http
 @inject AuthenticationStateProvider AuthStateProvider
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject NavigationManager Navigation
+@inject AppState AppState
 
 <PageTitle>Resources</PageTitle>
 
-<!-- Page Header -->
-<!-- Page Header -->
-<div class="mb-8 md:mb-12 fade-in flex flex-col md:flex-row items-start md:items-end justify-between gap-4">
-    <div>
-        <h1 class="text-3xl md:text-5xl font-bold text-black mb-2 md:mb-3" style="letter-spacing: -0.02em;">Resources</h1>
-        <p class="text-base md:text-lg text-gray-600 font-medium">Discover knowledge and tools shared by the community.</p>
+<div class="flex flex-col md:flex-row gap-8 items-start">
+    <!-- Sidebar Filters -->
+    <aside class="w-full md:w-64 shrink-0 bg-white border border-slate-200 rounded-2xl p-4">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-[18px] font-semibold text-slate-900 font-['Inter']">Filters</h2>
+            <button @onclick="ResetFilters" class="text-[14px] font-normal text-slate-900 underline font-['Inter'] hover:text-slate-700">
+                Reset filters
+            </button>
+        </div>
+
+        <!-- Resource Type Filter -->
+        <div class="mb-6">
+            <h3 class="text-[16px] font-normal text-slate-900 mb-3 font-['Inter']">Resource Type</h3>
+            <div class="space-y-3">
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" 
+                           checked="@(selectedCategories.Contains("Articles"))"
+                           @onchange='(e) => ToggleCategory("Articles", e.Value)'
+                           class="w-3.5 h-3.5 rounded border-gray-300 text-slate-900 focus:ring-slate-900 transition-colors" />
+                    <span class="text-[14px] font-medium text-slate-900 group-hover:text-slate-700 font-['Inter']">Articles</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" 
+                           checked="@(selectedCategories.Contains("Tutorials"))"
+                           @onchange='(e) => ToggleCategory("Tutorials", e.Value)'
+                           class="w-3.5 h-3.5 rounded border-gray-300 text-slate-900 focus:ring-slate-900 transition-colors" />
+                    <span class="text-[14px] font-medium text-slate-900 group-hover:text-slate-700 font-['Inter']">Tutorials</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" 
+                           checked="@(selectedCategories.Contains("Documentation"))"
+                           @onchange='(e) => ToggleCategory("Documentation", e.Value)'
+                           class="w-3.5 h-3.5 rounded border-gray-300 text-slate-900 focus:ring-slate-900 transition-colors" />
+                    <span class="text-[14px] font-medium text-slate-900 group-hover:text-slate-700 font-['Inter']">Documentation</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Tags Filter -->
+        <div>
+            <h3 class="text-[16px] font-normal text-slate-900 mb-3 font-['Inter']">Tags</h3>
+            <div class="flex flex-wrap gap-2">
+                @foreach (var tag in uniqueTags.Take(15))
+                {
+                    <button @onclick="() => ToggleTag(tag, !selectedTags.Contains(tag))"
+                            class="px-2.5 py-1 rounded-full text-[12px] font-medium transition-colors border @(selectedTags.Contains(tag) ? "bg-slate-900 text-white border-slate-900" : "bg-white text-slate-700 border-slate-200 hover:border-slate-300")">
+                        @tag
+                    </button>
+                }
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 w-full min-w-0">
+        <!-- Header -->
+        <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-[30px] font-semibold tracking-[-0.75px] text-slate-900 font-['Inter'] mb-1">Discover Resources</h1>
+                <p class="text-[20px] font-normal text-slate-900 tracking-[-0.1px] font-['Inter']">Explore shared knowledge from our community</p>
+            </div>
+            
+            <button @onclick="OpenCreateModal" class="shrink-0 flex items-center gap-2 px-4 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg hover:bg-slate-800 transition-colors shadow-sm hover:shadow">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add Resource
+            </button>
+        </div>
+
+        <!-- Loading State & Grid -->
+        @if (isLoading)
+        {
+            <LoadingSpinner Message="Loading resources..." />
+        }
+        else
+        {
+            <ResourceGrid 
+                Articles="@FilteredArticles"
+                SearchQuery="@searchQuery"
+                SelectedCategory="@(selectedCategories.Count > 0 ? string.Join(", ", selectedCategories) : "All")"
+                EmptyStateMessage="No resources match your filters."
+                OnViewArticle="ViewArticle"
+            />
+        }
     </div>
-    
-    <!-- Add Resource Button -->
-    <button @onclick="OpenCreateModal" class="premium-button flex items-center justify-center gap-2 !w-auto">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-        </svg>
-        <span>Add Resource</span>
-    </button>
 </div>
-
-<!-- Search & Filter Bar -->
-<SearchFilterBar 
-    SearchQuery="@searchQuery" 
-    SelectedCategory="@selectedCategory"
-    SearchQueryChanged="@(s => searchQuery = s)"
-    OnCategoryChanged="FilterByCategory"
-/>
-
-<!-- Loading State & Grid -->
-@if (isLoading)
-{
-    <LoadingSpinner Message="Loading resources..." />
-}
-else
-{
-    <ResourceGrid 
-        Articles="@FilteredArticles"
-        SearchQuery="@searchQuery"
-        SelectedCategory="@selectedCategory"
-        EmptyStateMessage="Be the first to share knowledge with the community!"
-        OnViewArticle="ViewArticle"
-    />
-}
 
 <!-- Resource Modal Component -->
 <ResourceModal 
@@ -65,19 +117,15 @@ else
     OnArticleDeleted="@HandleArticleDeleted"
 />
 
-
-
 @code {
     private List<Article> articles = new();
     private bool isLoading = true;
     private string searchQuery = "";
-    private string selectedCategory = "All";
     
-    [SupplyParameterFromQuery]
-    public string? Category { get; set; }
-
-    [SupplyParameterFromQuery]
-    public string? Tag { get; set; }
+    // Filters
+    private HashSet<string> selectedCategories = new();
+    private HashSet<string> selectedTags = new();
+    private List<string> uniqueTags = new();
 
     private string? userId;
     
@@ -89,6 +137,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        AppState.OnSearchChanged += HandleSearchChanged;
+        searchQuery = AppState.SearchQuery;
+
         try
         {
             // Get user ID for creating articles
@@ -110,6 +161,14 @@ else
             
             // Fetch all articles
             articles = await Http.GetFromJsonAsync<List<Article>>("/api/articles") ?? new();
+            
+            // Extract unique tags
+            uniqueTags = articles
+                .Where(a => a.TagList != null)
+                .SelectMany(a => a.TagList)
+                .Distinct()
+                .OrderBy(t => t)
+                .ToList();
         }
         catch (Exception ex)
         {
@@ -122,15 +181,45 @@ else
         }
     }
 
-    protected override void OnParametersSet()
+    public void Dispose()
     {
-        if (!string.IsNullOrEmpty(Category))
+        AppState.OnSearchChanged -= HandleSearchChanged;
+    }
+
+    private void HandleSearchChanged(string query)
+    {
+        searchQuery = query;
+        StateHasChanged();
+    }
+
+    private void ResetFilters()
+    {
+        selectedCategories.Clear();
+        selectedTags.Clear();
+        StateHasChanged();
+    }
+
+    private void ToggleCategory(string category, object? isChecked)
+    {
+        if (isChecked is bool check && check)
         {
-            selectedCategory = Category;
+            selectedCategories.Add(category);
         }
         else
         {
-            selectedCategory = "All";
+            selectedCategories.Remove(category);
+        }
+    }
+
+    private void ToggleTag(string tag, object? isChecked)
+    {
+        if (isChecked is bool check && check)
+        {
+            selectedTags.Add(tag);
+        }
+        else
+        {
+            selectedTags.Remove(tag);
         }
     }
 
@@ -141,17 +230,19 @@ else
             var filtered = articles.AsEnumerable();
             
             // Filter by category
-            if (selectedCategory != "All")
+            if (selectedCategories.Any())
             {
                 filtered = filtered.Where(a => 
-                    string.Equals(a.Category, selectedCategory, StringComparison.OrdinalIgnoreCase));
+                    !string.IsNullOrEmpty(a.Category) && 
+                    selectedCategories.Contains(a.Category));
             }
 
-            // Filter by tag
-            if (!string.IsNullOrEmpty(Tag))
+            // Filter by tags
+            if (selectedTags.Any())
             {
                 filtered = filtered.Where(a => 
-                    a.TagList.Contains(Tag, StringComparer.OrdinalIgnoreCase));
+                    a.TagList != null && 
+                    a.TagList.Any(t => selectedTags.Contains(t)));
             }
             
             // Filter by search query
@@ -164,40 +255,6 @@ else
             
             return filtered.OrderByDescending(a => a.CreatedAt);
         }
-    }
-
-    private void FilterByCategory(string category)
-    {
-        selectedCategory = category;
-        Navigation.NavigateTo(category == "All" ? "/" : $"/?category={category}");
-    }
-
-    private string GetContentPreview(string content)
-    {
-        const int maxLength = 150;
-        if (string.IsNullOrEmpty(content))
-            return "No content available";
-            
-        if (content.Length <= maxLength)
-            return content;
-            
-        return content.Substring(0, maxLength) + "...";
-    }
-
-    private string FormatDate(DateTime date)
-    {
-        var timeSpan = DateTime.UtcNow - date;
-        
-        if (timeSpan.TotalDays < 1)
-            return "Today";
-        else if (timeSpan.TotalDays < 2)
-            return "Yesterday";
-        else if (timeSpan.TotalDays < 7)
-            return $"{(int)timeSpan.TotalDays} days ago";
-        else if (timeSpan.TotalDays < 30)
-            return $"{(int)(timeSpan.TotalDays / 7)} weeks ago";
-        else
-            return date.ToString("MMM dd, yyyy");
     }
 
     private void OpenCreateModal()
@@ -255,6 +312,15 @@ else
         try
         {
             articles = await Http.GetFromJsonAsync<List<Article>>("/api/articles") ?? new();
+            
+            // Refresh tags
+            uniqueTags = articles
+                .Where(a => a.TagList != null)
+                .SelectMany(a => a.TagList)
+                .Distinct()
+                .OrderBy(t => t)
+                .ToList();
+                
             StateHasChanged();
         }
         catch (Exception ex)
@@ -262,6 +328,4 @@ else
             Console.WriteLine($"Error refreshing articles: {ex.Message}");
         }
     }
-
-
 }

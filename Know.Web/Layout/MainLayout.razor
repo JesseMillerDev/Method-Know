@@ -1,128 +1,97 @@
 ﻿@inherits LayoutComponentBase
-<div class="min-h-screen flex animated-background pattern-overlay text-gray-900 font-sans">
-    <!-- Mobile Sidebar Overlay -->
-    @if (isMobileMenuOpen)
-    {
-        <div class="fixed inset-0 bg-gray-900/50 z-40 backdrop-blur-sm transition-opacity" @onclick="ToggleMobileMenu"></div>
-    }
+@inject Know.Web.Services.AppState AppState
 
-    <!-- Mobile Sidebar -->
-    <aside class="fixed inset-y-0 left-0 z-50 w-64 bg-black flex flex-col transition-transform duration-300 ease-in-out transform @(isMobileMenuOpen ? "translate-x-0" : "-translate-x-full") md:hidden">
-        <!-- Branding -->
-        <div class="h-16 flex items-center px-6 border-b border-white border-opacity-10 gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 text-white">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-            </svg>
-            <span class="sidebar-brand">METHOD KNOW</span>
-            <button class="ml-auto text-white" @onclick="ToggleMobileMenu">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-        
-        <!-- Navigation -->
-        <div class="flex-1 overflow-y-auto py-4" @onclick="ToggleMobileMenu">
-            <NavMenu />
-        </div>
-    </aside>
-
-    <!-- Desktop Sidebar -->
-    <aside class="w-64 bg-black hidden md:flex flex-col relative z-20">
-        <!-- Branding -->
-        <div class="h-16 flex items-center px-6 border-b border-white border-opacity-10 gap-3">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" class="w-6 h-6 text-white">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-            </svg>
-            <span class="sidebar-brand">METHOD KNOW</span>
-        </div>
-        
-        <!-- Navigation -->
-        <div class="flex-1 overflow-y-auto py-4">
-            <NavMenu />
-        </div>
-        
-        <!-- Decorative Bottom Accent -->
-        <div class="h-1 bg-gradient-to-r from-white via-gray-300 to-white opacity-10"></div>
-    </aside>
-
-    <!-- Main Content Area -->
-    <div class="flex-1 flex flex-col min-w-0">
-        <!-- Premium Header with Blur -->
-        <header class="h-16 header-blur flex items-center justify-between px-4 md:px-6 sticky top-0 z-10">
-            <!-- Mobile Menu Button -->
-            <div class="md:hidden">
-                <button class="text-gray-500 hover:text-black transition-colors p-1 cursor-pointer" @onclick="ToggleMobileMenu">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+<div class="min-h-screen bg-[#fcfcfc] flex flex-col font-sans">
+    <!-- Top Navigation Header -->
+    <header class="bg-white border-b border-gray-100 sticky top-0 z-50">
+        <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 h-[80px] flex items-center justify-between gap-8">
+            <!-- Logo Section -->
+            <div class="flex items-center gap-2 shrink-0">
+                <div class="relative w-12 h-12 flex items-center justify-center">
+                    <div class="absolute inset-0 bg-blue-50 rounded-full"></div>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="relative text-slate-900">
+                        <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
                     </svg>
-                </button>
+                </div>
+                <span class="text-[20px] font-semibold tracking-[-0.1px] text-slate-900 font-['Inter']">Method Know</span>
             </div>
-            
-            <div class="flex-1"></div> <!-- Spacer -->
-            
-            <!-- Header Actions -->
-            <div class="flex items-center gap-3 md:gap-4">
+
+            <!-- Search Bar -->
+            <div class="flex-1 max-w-2xl hidden md:block">
+                <div class="relative group">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400 group-focus-within:text-slate-600 transition-colors">
+                            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                        </svg>
+                    </div>
+                    <input 
+                        type="text"
+                        placeholder="Search resources..."
+                        class="block w-full pl-11 pr-4 py-3 bg-slate-50 border-none rounded-xl text-slate-900 placeholder-slate-400 focus:ring-2 focus:ring-slate-200 focus:bg-white transition-all text-[16px]"
+                        @oninput="OnSearchInput"
+                    />
+                </div>
+            </div>
+
+            <!-- Right Actions -->
+            <div class="flex items-center gap-4 shrink-0">
                 <AuthorizeView>
                     <Authorized>
-                        <!-- Notification Bell -->
-                        <button class="p-2 text-gray-500 hover:text-black transition-colors rounded-full hover:bg-gray-100 notification-bell">
-                            <span class="sr-only">Notifications</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                        <!-- Notifications -->
+                        <button class="p-2 text-slate-400 hover:text-slate-900 transition-colors relative">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
                             </svg>
+                            <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                         </button>
-                        
-                        <!-- User Avatar with Dropdown -->
+
+                        <!-- Profile Dropdown -->
                         <div class="relative" @onclick="ToggleDropdown">
-                            <div class="h-8 w-8 rounded-full bg-black text-white flex items-center justify-center font-medium text-sm avatar-glow cursor-pointer">
-                                JM
-                            </div>
-                            
-                            <!-- Dropdown Menu -->
+                            <button class="flex items-center gap-3 pl-2 pr-1 py-1 rounded-full hover:bg-slate-50 transition-colors">
+                                <div class="w-10 h-10 rounded-full bg-slate-900 text-white flex items-center justify-center font-medium text-sm">
+                                    JM
+                                </div>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400">
+                                    <path d="m6 9 6 6 6-6"/>
+                                </svg>
+                            </button>
+
                             @if (showDropdown)
                             {
-                                <div class="absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white border border-gray-200 py-1 z-50 fade-in">
-                                    <div class="px-4 py-3 border-b border-gray-200">
-                                        <p class="text-sm font-semibold text-gray-900">Jesse Miller</p>
-                                        <p class="text-xs text-gray-500">jesse@example.com</p>
+                                <div class="absolute right-0 mt-2 w-56 rounded-xl shadow-lg bg-white border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div class="px-4 py-3 border-b border-slate-50">
+                                        <p class="text-sm font-semibold text-slate-900">Jesse Miller</p>
+                                        <p class="text-xs text-slate-500">jesse@example.com</p>
                                     </div>
-                                    <a href="profile" class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                                        <span class="flex items-center gap-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                                            </svg>
+                                    <div class="py-1">
+                                        <a href="profile" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                             Profile
-                                        </span>
-                                    </a>
-                                    <button @onclick="Logout" class="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors">
-                                        <span class="flex items-center gap-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
-                                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-                                            </svg>
+                                        </a>
+                                        <button @onclick="Logout" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
                                             Log out
-                                        </span>
-                                    </button>
+                                        </button>
+                                    </div>
                                 </div>
                             }
                         </div>
                     </Authorized>
                     <NotAuthorized>
-                        <a href="login" class="px-4 py-2 text-sm font-semibold bg-black text-white rounded-lg hover:bg-gray-900 transition-all hover:shadow-lg">
-                            Log in →
-                        </a>
+                        <div class="flex items-center gap-4">
+                            <a href="login" class="text-sm font-semibold text-slate-900 hover:text-slate-700">Log in</a>
+                            <a href="signup" class="px-4 py-2.5 text-sm font-semibold bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-all shadow-sm hover:shadow">Sign up</a>
+                        </div>
                     </NotAuthorized>
                 </AuthorizeView>
             </div>
-        </header>
+        </div>
+    </header>
 
-        <!-- Page Content -->
-        <main class="flex-1 overflow-y-auto p-3 md:p-6">
-            <div class="max-w-7xl mx-auto">
-                @Body
-            </div>
-        </main>
-    </div>
+    <!-- Main Content -->
+    <main class="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-8">
+        @Body
+    </main>
 </div>
 
 @code {
@@ -131,16 +100,15 @@
     [Inject] Blazored.LocalStorage.ILocalStorageService LocalStorage { get; set; } = default!;
 
     private bool showDropdown = false;
-    private bool isMobileMenuOpen = false;
 
     private void ToggleDropdown()
     {
         showDropdown = !showDropdown;
     }
 
-    private void ToggleMobileMenu()
+    private void OnSearchInput(ChangeEventArgs e)
     {
-        isMobileMenuOpen = !isMobileMenuOpen;
+        AppState.SetSearchQuery(e.Value?.ToString() ?? "");
     }
 
     private async Task Logout()

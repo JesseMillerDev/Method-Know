@@ -7,57 +7,84 @@
 @inject NavigationManager Navigation
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
-<div class="flex min-h-full flex-col justify-center">
-  <div class="sm:mx-auto sm:w-full">
-    <h2 class="text-center text-3xl font-bold leading-tight tracking-tight text-black mb-8">Sign in to your account</h2>
-  </div>
-
-  <div class="sm:mx-auto sm:w-full">
-    <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" class="space-y-6">
-      <DataAnnotationsValidator />
-      
-      @if (!string.IsNullOrEmpty(errorMessage))
-      {
-        <div class="validation-message error bg-red-50 border-2 border-red-200 rounded-lg p-3 text-red-700 text-sm">
-          @errorMessage
+<div class="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
+    <!-- Header Section -->
+    <div class="mb-8 flex flex-col items-center text-center">
+        <div class="relative mb-6 h-24 w-24">
+            <!-- Ellipse Background -->
+            <div class="absolute inset-0 rounded-full bg-blue-50"></div>
+            <!-- Icon -->
+            <div class="absolute inset-0 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-900">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                </svg>
+            </div>
         </div>
-      }
+        
+        <h2 class="mb-2 text-[30px] font-semibold leading-[36px] tracking-[-0.225px] text-slate-900 font-['Inter']">
+            Welcome Back
+        </h2>
+        <p class="text-[20px] font-normal leading-[28px] tracking-[-0.1px] text-slate-900 font-['Inter']">
+            Share and discover valuable learning resources
+        </p>
+    </div>
 
-      <div class="space-y-5">
-        <!-- Email Field -->
-        <AuthInput 
-            Id="email"
-            Label="Email address"
-            @bind-Value="loginModel.Email"
-            Placeholder="you@example.com"
-            Disabled="@isLoading"
-        />
+    <!-- Login Card -->
+    <div class="w-full max-w-[480px]">
+        <div class="bg-white px-10 py-12 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.06),0px_1px_3px_0px_rgba(0,0,0,0.10)] sm:rounded-xl border border-[rgba(0,0,0,0.12)]">
+            <EditForm Model="@loginModel" OnValidSubmit="HandleLogin" class="space-y-6">
+                <DataAnnotationsValidator />
+                
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="rounded-md bg-red-50 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">@errorMessage</h3>
+                            </div>
+                        </div>
+                    </div>
+                }
 
-        <!-- Password Field -->
-        <AuthInput 
-            Id="password"
-            Label="Password"
-            Type="password"
-            @bind-Value="loginModel.Password"
-            Placeholder="Enter your password"
-            Disabled="@isLoading"
-        />
-      </div>
+                <div class="space-y-5">
+                    <AuthInput 
+                        Id="email"
+                        Label="Email"
+                        @bind-Value="loginModel.Email"
+                        Placeholder="Enter your email"
+                        Disabled="@isLoading"
+                    />
 
-      <!-- Sign In Button -->
-      <AuthButton 
-          Text="Sign in"
-          LoadingText="Signing in..."
-          IsLoading="@isLoading"
-      />
-    </EditForm>
+                    <AuthInput 
+                        Id="password"
+                        Label="Password"
+                        Type="password"
+                        @bind-Value="loginModel.Password"
+                        Placeholder="Enter your password"
+                        Disabled="@isLoading"
+                    />
+                </div>
 
-    <!-- Sign Up Link -->
-    <p class="mt-8 text-center text-sm text-gray-600">
-      Not a member?
-      <a href="signup" class="font-semibold text-black hover:text-gray-700 underline underline-offset-2 decoration-2 transition-colors ml-1">Start a 14 day free trial</a>
-    </p>
-  </div>
+                <div class="pt-2">
+                    <AuthButton 
+                        Text="Sign in"
+                        LoadingText="Signing in..."
+                        IsLoading="@isLoading"
+                    />
+                </div>
+            </EditForm>
+
+            <div class="mt-8 flex items-center justify-center gap-1 text-[16px] text-slate-900">
+                <span>Don't have an account?</span>
+                <a href="signup" class="font-semibold hover:underline">Sign up</a>
+            </div>
+        </div>
+    </div>
 </div>
 
 @code {
