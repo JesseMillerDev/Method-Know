@@ -1,0 +1,17 @@
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+@layer utilities {
+    .glow-black {
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .text-balance {
+        text-wrap: balance;
+    }
+
+    .gpu-accelerated {
+        transform: translateZ(0);
+        will-change: transform;
+    }
+}
