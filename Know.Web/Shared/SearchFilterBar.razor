@@ -25,6 +25,8 @@
     </div>
 </div>
 
+@using System.Threading
+
 @code {
     [Parameter] public string SearchQuery { get; set; } = "";
     [Parameter] public string SelectedCategory { get; set; } = "All";
@@ -32,9 +34,31 @@
     [Parameter] public EventCallback<string> SearchQueryChanged { get; set; }
     [Parameter] public EventCallback<string> OnCategoryChanged { get; set; }
 
-    private async Task OnSearchInput(ChangeEventArgs e)
+    private CancellationTokenSource? _debounceCts;
+
+    private void OnSearchInput(ChangeEventArgs e)
     {
         SearchQuery = e.Value?.ToString() ?? "";
-        await SearchQueryChanged.InvokeAsync(SearchQuery);
+        
+        _debounceCts?.Cancel();
+        _debounceCts = new CancellationTokenSource();
+        var token = _debounceCts.Token;
+
+        Task.Delay(300, token).ContinueWith(async _ => 
+        {
+            if (!token.IsCancellationRequested)
+            {
+                await InvokeAsync(async () => 
+                {
+                    await SearchQueryChanged.InvokeAsync(SearchQuery);
+                });
+            }
+        });
+    }
+
+    public void Dispose()
+    {
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
     }
 }

@@ -205,10 +205,23 @@ public class VectorDbService
         }
     }
 
-    public async Task<IEnumerable<Article>> GetArticlesByUserIdAsync(string userId)
+    public async Task<IEnumerable<Article>> GetArticlesByUserIdAsync(string userId, string? category = null, string? searchQuery = null)
     {
-        var articles = await _dbContext.Articles
-            .Where(a => a.UserId == userId)
+        var query = _dbContext.Articles
+            .Where(a => a.UserId == userId);
+
+        if (!string.IsNullOrEmpty(category) && !category.Equals("All", StringComparison.OrdinalIgnoreCase))
+        {
+            query = query.Where(a => a.Category == category);
+        }
+
+        if (!string.IsNullOrEmpty(searchQuery))
+        {
+            query = query.Where(a => a.Title.ToLower().Contains(searchQuery.ToLower()) || 
+                                     a.Content.ToLower().Contains(searchQuery.ToLower()));
+        }
+
+        var articles = await query
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
             
@@ -250,11 +263,58 @@ public class VectorDbService
         return article;
     }
 
-    public async Task<IEnumerable<Article>> GetAllArticlesAsync(string? userId = null)
+    public async Task<IEnumerable<Article>> GetAllArticlesAsync(string? userId = null, string[]? categories = null, string[]? tags = null, string? searchQuery = null)
     {
-        var articles = await _dbContext.Articles
+        var query = _dbContext.Articles.AsQueryable();
+
+        if (categories != null && categories.Any())
+        {
+            query = query.Where(a => categories.Contains(a.Category));
+        }
+
+        if (tags != null && tags.Any())
+        {
+            // Naive JSON array filtering for SQLite: Check if Tags string contains "tag"
+            // This works because tags are serialized as ["tag1","tag2"]
+            // We combine OR conditions: WHERE Tags LIKE '%"tag1"%' OR Tags LIKE '%"tag2"%'
+            // EF Core doesn't easily support dynamic ORs in a single LINQ expression without PredicateBuilder,
+            // but we can loop. However, looping with Where adds AND conditions.
+            // We need (c1 OR c2 OR c3).
+            
+            // Simple approach: Fetch more and filter in memory if tags are present? 
+            // Or build a raw SQL or use a loop for AND if the user wants ALL tags (usually filters are OR for tags? UI implies OR usually).
+            // The UI in Home.razor uses `a.TagList.Any(t => selectedTags.Contains(t))` which is OR.
+            
+            // Let's try to construct the OR clause.
+            // Since we can't easily do dynamic OR in standard LINQ without a library, 
+            // and `Tags` is a string, let's just do client-side eval for tags if needed, OR
+            // use a raw SQL filter if performance is critical.
+            // Given the complexity of JSON string matching in EF/SQLite without extensions, 
+            // and assuming the dataset isn't massive yet, let's try to do it as efficiently as possible.
+            
+            // Actually, we can use a simple trick:
+            // query = query.Where(a => tags.Any(t => a.Tags.Contains($"\"{t}\""))); 
+            // But `tags` is a local collection, EF Core can't translate `localCollection.Any(t => dbField.Contains(t))`.
+            
+            // So we fallback to: Fetch filtered by Category/Search, then filter tags in memory.
+            // This is still better than fetching EVERYTHING.
+        }
+
+        if (!string.IsNullOrEmpty(searchQuery))
+        {
+            query = query.Where(a => a.Title.ToLower().Contains(searchQuery.ToLower()) || 
+                                     a.Content.ToLower().Contains(searchQuery.ToLower()));
+        }
+
+        var articles = await query
             .OrderByDescending(a => a.CreatedAt)
             .ToListAsync();
+
+        // In-memory tag filtering (OR logic)
+        if (tags != null && tags.Any())
+        {
+            articles = articles.Where(a => a.TagList.Any(t => tags.Contains(t))).ToList();
+        }
 
         if (userId != null && articles.Any())
         {

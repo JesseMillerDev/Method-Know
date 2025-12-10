@@ -94,7 +94,7 @@
         else
         {
             <ResourceGrid 
-                Articles="@FilteredArticles"
+                Articles="@articles"
                 SearchQuery="@searchQuery"
                 SelectedCategory="@(selectedCategories.Count > 0 ? string.Join(", ", selectedCategories) : "All")"
                 EmptyStateMessage="No resources match your filters."
@@ -160,7 +160,7 @@
             }
             
             // Fetch all articles
-            articles = await Http.GetFromJsonAsync<List<Article>>("/api/articles") ?? new();
+            await RefreshArticles();
             
             // Extract unique tags
             uniqueTags = articles
@@ -186,20 +186,20 @@
         AppState.OnSearchChanged -= HandleSearchChanged;
     }
 
-    private void HandleSearchChanged(string query)
+    private async void HandleSearchChanged(string query)
     {
         searchQuery = query;
-        StateHasChanged();
+        await RefreshArticles();
     }
 
-    private void ResetFilters()
+    private async Task ResetFilters()
     {
         selectedCategories.Clear();
         selectedTags.Clear();
-        StateHasChanged();
+        await RefreshArticles();
     }
 
-    private void ToggleCategory(string category, object? isChecked)
+    private async Task ToggleCategory(string category, object? isChecked)
     {
         if (isChecked is bool check && check)
         {
@@ -209,9 +209,10 @@
         {
             selectedCategories.Remove(category);
         }
+        await RefreshArticles();
     }
 
-    private void ToggleTag(string tag, object? isChecked)
+    private async Task ToggleTag(string tag, object? isChecked)
     {
         if (isChecked is bool check && check)
         {
@@ -221,41 +222,10 @@
         {
             selectedTags.Remove(tag);
         }
+        await RefreshArticles();
     }
 
-    private IEnumerable<Article> FilteredArticles
-    {
-        get
-        {
-            var filtered = articles.AsEnumerable();
-            
-            // Filter by category
-            if (selectedCategories.Any())
-            {
-                filtered = filtered.Where(a => 
-                    !string.IsNullOrEmpty(a.Category) && 
-                    selectedCategories.Contains(a.Category));
-            }
 
-            // Filter by tags
-            if (selectedTags.Any())
-            {
-                filtered = filtered.Where(a => 
-                    a.TagList != null && 
-                    a.TagList.Any(t => selectedTags.Contains(t)));
-            }
-            
-            // Filter by search query
-            if (!string.IsNullOrWhiteSpace(searchQuery))
-            {
-                filtered = filtered.Where(a => 
-                    a.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-                    a.Content.Contains(searchQuery, StringComparison.OrdinalIgnoreCase));
-            }
-            
-            return filtered.OrderByDescending(a => a.CreatedAt);
-        }
-    }
 
     private void OpenCreateModal()
     {
@@ -311,21 +281,80 @@
     {
         try
         {
-            articles = await Http.GetFromJsonAsync<List<Article>>("/api/articles") ?? new();
+            isLoading = true;
+            StateHasChanged();
+
+            var queryParams = new List<string>();
             
-            // Refresh tags
-            uniqueTags = articles
-                .Where(a => a.TagList != null)
-                .SelectMany(a => a.TagList)
-                .Distinct()
-                .OrderBy(t => t)
-                .ToList();
+            foreach (var category in selectedCategories)
+            {
+                queryParams.Add($"categories={Uri.EscapeDataString(category)}");
+            }
+
+            foreach (var tag in selectedTags)
+            {
+                queryParams.Add($"tags={Uri.EscapeDataString(tag)}");
+            }
+            
+            if (!string.IsNullOrWhiteSpace(searchQuery))
+            {
+                queryParams.Add($"search={Uri.EscapeDataString(searchQuery)}");
+            }
+
+            var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
+            var apiUrl = $"/api/articles{queryString}";
+
+            articles = await Http.GetFromJsonAsync<List<Article>>(apiUrl) ?? new();
+            
+            // Refresh tags (only if not filtering by tags, or maybe always? 
+            // If we filter, we might only get a subset of tags. 
+            // Ideally, we want ALL tags for the filter list, which should probably come from a separate endpoint or cache.
+            // But for now, let's keep it simple and maybe NOT update uniqueTags on every filter, 
+            // or else the filter list will shrink as you filter!
+            // The original code updated uniqueTags on every load. 
+            // If we want to keep all tags available for filtering, we should probably fetch them once or separately.
+            // Let's check if there is a GetTags endpoint. Yes, /api/tags.
+            
+            // Let's fetch tags separately if the list is empty, or just keep the current behavior 
+            // but be aware that filtering might hide other tags.
+            // Actually, `uniqueTags` drives the filter UI. If we update it based on *filtered* results, 
+            // the user won't be able to select other tags.
+            // So we should ONLY update uniqueTags if we are NOT filtering, or fetch them from /api/tags.
+            // There is an endpoint `app.MapGet("/api/tags", ...)` in Program.cs.
+            // Let's use that to populate the filter list initially!
+            
+            if (!uniqueTags.Any())
+            {
+                try 
+                {
+                    uniqueTags = await Http.GetFromJsonAsync<List<string>>("/api/tags") ?? new();
+                }
+                catch 
+                {
+                    // Fallback to extracting from articles if tags endpoint fails or returns empty
+                    if (articles.Any())
+                    {
+                         uniqueTags = articles
+                            .Where(a => a.TagList != null)
+                            .SelectMany(a => a.TagList)
+                            .Distinct()
+                            .OrderBy(t => t)
+                            .ToList();
+                    }
+                }
+            }
                 
             StateHasChanged();
         }
         catch (Exception ex)
         {
             Console.WriteLine($"Error refreshing articles: {ex.Message}");
+            articles = new();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
         }
     }
 }

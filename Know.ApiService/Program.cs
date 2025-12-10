@@ -188,10 +188,10 @@ app.MapGet("/api/search", async ([FromQuery] string query, VectorDbService vecto
 })
 .WithName("SearchArticles");
 
-app.MapGet("/api/articles", async (VectorDbService vectorService, HttpContext httpContext) =>
+app.MapGet("/api/articles", async ([FromQuery] string[]? categories, [FromQuery] string[]? tags, [FromQuery] string? search, VectorDbService vectorService, HttpContext httpContext) =>
 {
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    var articles = await vectorService.GetAllArticlesAsync(userId);
+    var articles = await vectorService.GetAllArticlesAsync(userId, categories, tags, search);
     return Results.Ok(articles);
 })
 .WithName("GetAllArticles")
@@ -241,9 +241,9 @@ app.MapPost("/api/articles/{id}/vote", async (int id, int? voteValue, VectorDbSe
 .WithName("VoteArticle")
 .RequireAuthorization();
 
-app.MapGet("/api/users/{userId}/articles", async (string userId, VectorDbService vectorService) =>
+app.MapGet("/api/users/{userId}/articles", async (string userId, [FromQuery] string? category, [FromQuery] string? search, VectorDbService vectorService) =>
 {
-    var articles = await vectorService.GetArticlesByUserIdAsync(userId);
+    var articles = await vectorService.GetArticlesByUserIdAsync(userId, category, search);
     return Results.Ok(articles);
 })
 .WithName("GetUserArticles")
