@@ -48,6 +48,7 @@ public static class DatabaseInitializer
             try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""Bio"" TEXT NULL;"); } catch (SqliteException) {}
             try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""Interests"" TEXT NULL;"); } catch (SqliteException) {}
             try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""NotificationPreferences"" TEXT NULL;"); } catch (SqliteException) {}
+            try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""CustomCss"" TEXT NULL;"); } catch (SqliteException) {}
         }
         catch (Exception ex)
         {

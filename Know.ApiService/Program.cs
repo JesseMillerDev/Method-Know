@@ -77,6 +77,16 @@ builder.Services.AddCors(options =>
         });
 });
 
+// Register Gemini Chat Client
+builder.Services.AddSingleton<Microsoft.Extensions.AI.IChatClient>(sp =>
+{
+    var apiKey = builder.Configuration["Gemini:ApiKey"];
+    if (string.IsNullOrEmpty(apiKey)) throw new InvalidOperationException("Gemini:ApiKey is missing");
+    return new GeminiChatClient(new HttpClient(), apiKey);
+});
+
+builder.Services.AddScoped<AiThemeService>();
+
 var app = builder.Build();
 
 app.UseCors("AllowAll");
@@ -252,6 +262,7 @@ app.MapGet("/api/tags", async (VectorDbService vectorService) =>
 .RequireAuthorization();
 
 app.MapProfileEndpoints();
+app.MapThemeEndpoints();
 
 app.Run();
 

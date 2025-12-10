@@ -3,7 +3,7 @@
 @inject Know.Web.Services.ThemeService ThemeService
 @implements IDisposable
 
-<div class="min-h-screen bg-[#fcfcfc] dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
+<div class="min-h-screen bg-slate-950 dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
     <!-- Top Navigation Header -->
     <header class="bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 sticky top-0 z-50 transition-colors duration-200">
         <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 h-[80px] flex items-center justify-between gap-8">
@@ -70,6 +70,10 @@
                                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                                             Profile
                                         </a>
+                                        <a href="theme" class="flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.74 5.88-5.74 5.88-5.74-5.88z"/><path d="M12 22.31l5.74-5.88-5.74-5.88-5.74 5.88z"/></svg>
+                                            AI Theme
+                                        </a>
                                         <button @onclick="ToggleTheme" class="w-full flex items-center gap-2 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                                             @if (ThemeService.IsDarkMode)
                                             {
@@ -118,7 +122,7 @@
     protected override async Task OnInitializedAsync()
     {
         ThemeService.OnChange += StateHasChanged;
-        await ThemeService.InitializeAsync();
+        await ThemeService.InitializeThemeAsync();
     }
 
     public void Dispose()

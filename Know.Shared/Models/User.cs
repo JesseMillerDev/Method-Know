@@ -8,4 +8,5 @@ public class User
     public string? Bio { get; set; }
     public string? Interests { get; set; }
     public string? NotificationPreferences { get; set; }
+    public string? CustomCss { get; set; }
 }

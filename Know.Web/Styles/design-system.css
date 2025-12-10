@@ -24,6 +24,55 @@
     --timing-slow: 350ms;
     --easing-smooth: cubic-bezier(0.4, 0, 0.2, 1);
     --easing-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+
+    /* ============================================
+       SEMANTIC THEME VARIABLES (Light Mode Defaults)
+       ============================================ */
+
+    /* Page & Surface Backgrounds */
+    --color-bg-page: #fcfcfc;
+    --color-bg-surface: #ffffff;
+    --color-bg-surface-secondary: #f8fafc;
+    --color-bg-surface-tertiary: #f0f9ff;
+
+    /* Text Colors */
+    --color-text-primary: #0f172a;
+    --color-text-secondary: #334155;
+    --color-text-tertiary: #64748b;
+    --color-text-quaternary: #94a3b8;
+
+    /* Border Colors */
+    --color-border-primary: #e2e8f0;
+    --color-border-secondary: #cbd5e1;
+
+    /* Accent Colors */
+    --color-primary: #3b82f6;
+    --color-primary-hover: #2563eb;
+}
+
+/* ============================================
+   DARK MODE THEME OVERRIDES
+   ============================================ */
+.dark {
+    /* Page & Surface Backgrounds */
+    --color-bg-page: #020617;
+    --color-bg-surface: #0f172a;
+    --color-bg-surface-secondary: #1e293b;
+    --color-bg-surface-tertiary: #334155;
+
+    /* Text Colors */
+    --color-text-primary: #f8fafc;
+    --color-text-secondary: #cbd5e1;
+    --color-text-tertiary: #94a3b8;
+    --color-text-quaternary: #64748b;
+
+    /* Border Colors */
+    --color-border-primary: #1e293b;
+    --color-border-secondary: #334155;
+
+    /* Accent Colors */
+    --color-primary: #3b82f6;
+    --color-primary-hover: #60a5fa;
 }
 
 /* ============================================
