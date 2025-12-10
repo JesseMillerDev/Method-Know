@@ -16,11 +16,13 @@ public class VectorDbService
 {
     private readonly AppDbContext _dbContext;
     private readonly ILogger<VectorDbService> _logger;
+    private readonly TagCacheService _tagCache;
 
-    public VectorDbService(AppDbContext dbContext, ILogger<VectorDbService> logger)
+    public VectorDbService(AppDbContext dbContext, ILogger<VectorDbService> logger, TagCacheService tagCache)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _tagCache = tagCache;
     }
 
     public async Task<Article> CreateArticleAsync(Article article, float[]? vector)
@@ -33,6 +35,12 @@ public class VectorDbService
         if (vector != null)
         {
             await InsertVectorAsync(article.Id, vector);
+        }
+
+        // 3. Update Tag Cache
+        if (article.TagList.Any())
+        {
+            _tagCache.AddTags(article.TagList);
         }
 
         return article;
@@ -282,11 +290,16 @@ public class VectorDbService
             return (OperationResult.Forbidden, null);
         }
 
+        var oldTags = existingArticle.TagList;
+
         existingArticle.Title = updatedArticle.Title;
         existingArticle.Content = updatedArticle.Content;
         existingArticle.Category = updatedArticle.Category;
         existingArticle.Tags = updatedArticle.Tags;
         existingArticle.Summary = updatedArticle.Summary;
+
+        // Update Tag Cache
+        _tagCache.UpdateTags(oldTags, updatedArticle.TagList);
 
         await _dbContext.SaveChangesAsync();
 
@@ -345,6 +358,12 @@ public class VectorDbService
         _dbContext.ArticleVotes.RemoveRange(votes);
         _dbContext.Articles.Remove(article);
 
+        // Update Tag Cache
+        if (article.TagList.Any())
+        {
+            _tagCache.RemoveTags(article.TagList);
+        }
+
         await _dbContext.SaveChangesAsync();
 
         var connection = _dbContext.Database.GetDbConnection();
@@ -364,29 +383,8 @@ public class VectorDbService
 
         return OperationResult.Success;
     }
-    public async Task<List<string>> GetAllTagsAsync()
+    public Task<List<string>> GetAllTagsAsync()
     {
-        var tagsJson = await _dbContext.Articles
-            .Select(a => a.Tags)
-            .ToListAsync();
-
-        var allTags = tagsJson
-            .SelectMany(t => 
-            {
-                try 
-                {
-                    return System.Text.Json.JsonSerializer.Deserialize<List<string>>(t) ?? new List<string>();
-                }
-                catch
-                {
-                    return new List<string>();
-                }
-            })
-            .Where(t => !string.IsNullOrWhiteSpace(t))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(t => t)
-            .ToList();
-
-        return allTags;
+        return Task.FromResult(_tagCache.GetPopularTags());
     }
 }

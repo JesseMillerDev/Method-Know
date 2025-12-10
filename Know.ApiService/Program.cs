@@ -41,6 +41,9 @@ builder.Services.AddHostedService<EmbeddingBackgroundService>();
 // Register Tagging Service
 builder.Services.AddSingleton<TaggingService>();
 
+// Register Tag Cache Service
+builder.Services.AddSingleton<TagCacheService>();
+
 // Configure JWT Authentication
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_that_should_be_in_env_vars_and_long_enough";
 builder.Services.AddAuthentication(options =>
@@ -83,6 +86,9 @@ app.UseCors("AllowAll");
 
 // Initialize Database
 await DatabaseInitializer.InitializeAsync(app.Services);
+
+// Initialize Tag Cache
+await app.Services.GetRequiredService<TagCacheService>().InitializeAsync();
 
 // Configure the HTTP request pipeline.
 app.UseSwagger();
@@ -243,9 +249,9 @@ app.MapGet("/api/users/{userId}/articles", async (string userId, VectorDbService
 .WithName("GetUserArticles")
 .RequireAuthorization();
 
-app.MapGet("/api/tags", async (VectorDbService vectorService) =>
+app.MapGet("/api/tags", (TagCacheService tagCache) =>
 {
-    var tags = await vectorService.GetAllTagsAsync();
+    var tags = tagCache.GetPopularTags();
     return Results.Ok(tags);
 })
 .WithName("GetAllTags")
