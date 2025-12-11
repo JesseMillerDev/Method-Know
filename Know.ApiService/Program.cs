@@ -15,6 +15,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHttpClient();
 
 // Register DbContext
 var dbPath = "know.db";
@@ -188,10 +189,12 @@ app.MapGet("/api/search", async ([FromQuery] string query, VectorDbService vecto
 })
 .WithName("SearchArticles");
 
-app.MapGet("/api/articles", async ([FromQuery] string[]? categories, [FromQuery] string[]? tags, [FromQuery] string? search, VectorDbService vectorService, HttpContext httpContext) =>
+app.MapGet("/api/articles", async ([FromQuery] string[]? categories, [FromQuery] string[]? tags, [FromQuery] string? search, [FromQuery] int? page, [FromQuery] int? pageSize, VectorDbService vectorService, HttpContext httpContext) =>
 {
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    var articles = await vectorService.GetAllArticlesAsync(userId, categories, tags, search);
+    var p = page ?? 1;
+    var ps = pageSize ?? 20;
+    var articles = await vectorService.GetAllArticlesAsync(userId, categories, tags, search, p, ps);
     return Results.Ok(articles);
 })
 .WithName("GetAllArticles")
@@ -258,6 +261,7 @@ app.MapGet("/api/tags", (TagCacheService tagCache) =>
 .RequireAuthorization();
 
 app.MapProfileEndpoints();
+app.MapAdminEndpoints();
 
 app.Run();
 

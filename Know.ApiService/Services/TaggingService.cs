@@ -27,7 +27,7 @@ public class TaggingService : IDisposable
         var parameters = new ModelParams(_modelPath)
         {
             ContextSize = 2048,
-            GpuLayerCount = 0 // CPU for now
+            GpuLayerCount = 99 // Enable GPU (Metal on Mac)
         };
 
         try 
@@ -52,7 +52,7 @@ public class TaggingService : IDisposable
             var safeContent = Truncate(content, 6000);
 
             // Create a context for this specific request to ensure isolation
-            var parameters = new ModelParams(_modelPath) { ContextSize = 2048, GpuLayerCount = 0 };
+            var parameters = new ModelParams(_modelPath) { ContextSize = 2048, GpuLayerCount = 99 };
             using var context = _model.CreateContext(parameters);
             var executor = new InteractiveExecutor(context);
 
@@ -105,7 +105,7 @@ Tags:<|eot_id|><|start_header_id|>assistant<|end_header_id|>
             var safeContent = Truncate(content, 6000);
 
             // Create a context for this specific request to ensure isolation
-            var parameters = new ModelParams(_modelPath) { ContextSize = 2048, GpuLayerCount = 0 };
+            var parameters = new ModelParams(_modelPath) { ContextSize = 2048, GpuLayerCount = 99 };
             using var context = _model.CreateContext(parameters);
             var executor = new InteractiveExecutor(context);
 

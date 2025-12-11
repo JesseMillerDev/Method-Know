@@ -263,7 +263,7 @@ public class VectorDbService
         return article;
     }
 
-    public async Task<IEnumerable<Article>> GetAllArticlesAsync(string? userId = null, string[]? categories = null, string[]? tags = null, string? searchQuery = null)
+    public async Task<IEnumerable<Article>> GetAllArticlesAsync(string? userId = null, string[]? categories = null, string[]? tags = null, string? searchQuery = null, int page = 1, int pageSize = 20)
     {
         var query = _dbContext.Articles.AsQueryable();
 
@@ -274,30 +274,28 @@ public class VectorDbService
 
         if (tags != null && tags.Any())
         {
-            // Naive JSON array filtering for SQLite: Check if Tags string contains "tag"
-            // This works because tags are serialized as ["tag1","tag2"]
-            // We combine OR conditions: WHERE Tags LIKE '%"tag1"%' OR Tags LIKE '%"tag2"%'
-            // EF Core doesn't easily support dynamic ORs in a single LINQ expression without PredicateBuilder,
-            // but we can loop. However, looping with Where adds AND conditions.
-            // We need (c1 OR c2 OR c3).
+            // In-memory tag filtering fallback (fetch more, then filter)
+            // Since we can't easily do OR logic for tags in SQLite/EF Core efficiently without full text search or complex predicates,
+            // and we need pagination, this gets tricky.
+            // If we filter in memory, we break database pagination.
+            // Ideally, we should use a proper search engine or raw SQL for this.
+            // For now, let's assume we filter in memory AFTER fetching if tags are present, 
+            // BUT this means we might return fewer than pageSize items.
+            // To fix this properly, we should do the tag filtering in the DB query if possible.
             
-            // Simple approach: Fetch more and filter in memory if tags are present? 
-            // Or build a raw SQL or use a loop for AND if the user wants ALL tags (usually filters are OR for tags? UI implies OR usually).
-            // The UI in Home.razor uses `a.TagList.Any(t => selectedTags.Contains(t))` which is OR.
+            // Let's try to do it in memory but fetch enough to cover it? No, that's unreliable.
+            // Let's try to build a predicate for tags if possible, or just accept that tag filtering might be slow/limited.
+            // Actually, for "OR" logic with tags: `Where(a => a.Tags.Contains("tag1") || a.Tags.Contains("tag2"))`
+            // We can build this dynamically.
             
-            // Let's try to construct the OR clause.
-            // Since we can't easily do dynamic OR in standard LINQ without a library, 
-            // and `Tags` is a string, let's just do client-side eval for tags if needed, OR
-            // use a raw SQL filter if performance is critical.
-            // Given the complexity of JSON string matching in EF/SQLite without extensions, 
-            // and assuming the dataset isn't massive yet, let's try to do it as efficiently as possible.
+            // However, `Tags` is a JSON string. `Contains` on string works for simple cases.
+            // Let's use a simple client-side evaluation for now, but apply it BEFORE pagination if possible.
+            // EF Core 3.0+ doesn't support client-side eval in Where automatically.
             
-            // Actually, we can use a simple trick:
-            // query = query.Where(a => tags.Any(t => a.Tags.Contains($"\"{t}\""))); 
-            // But `tags` is a local collection, EF Core can't translate `localCollection.Any(t => dbField.Contains(t))`.
-            
-            // So we fallback to: Fetch filtered by Category/Search, then filter tags in memory.
-            // This is still better than fetching EVERYTHING.
+            // Given the constraints and the "Stress Test" requirement, let's stick to the previous behavior:
+            // Fetch all matching category/search, then filter tags in memory, THEN paginate.
+            // This is inefficient for huge datasets but correct for functionality.
+            // Optimization: If no tags, paginate in DB. If tags, fetch all (filtered by other criteria) then paginate in memory.
         }
 
         if (!string.IsNullOrEmpty(searchQuery))
@@ -306,14 +304,26 @@ public class VectorDbService
                                      a.Content.ToLower().Contains(searchQuery.ToLower()));
         }
 
-        var articles = await query
-            .OrderByDescending(a => a.CreatedAt)
-            .ToListAsync();
+        query = query.OrderByDescending(a => a.CreatedAt);
 
-        // In-memory tag filtering (OR logic)
+        List<Article> articles;
+
+        // If we have tags, we must fetch all to filter correctly (OR logic) then paginate.
+        // If NO tags, we can paginate in DB.
         if (tags != null && tags.Any())
         {
-            articles = articles.Where(a => a.TagList.Any(t => tags.Contains(t))).ToList();
+            var allArticles = await query.ToListAsync();
+            articles = allArticles.Where(a => a.TagList.Any(t => tags.Contains(t)))
+                                  .Skip((page - 1) * pageSize)
+                                  .Take(pageSize)
+                                  .ToList();
+        }
+        else
+        {
+            articles = await query
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
         }
 
         if (userId != null && articles.Any())
