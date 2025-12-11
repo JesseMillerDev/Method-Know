@@ -10,6 +10,7 @@ public class ArticleService
     private readonly VectorService _vectorService;
     private readonly VoteService _voteService;
     private readonly TagCacheService _tagCache;
+    private readonly BackgroundQueue _queue;
     private readonly ILogger<ArticleService> _logger;
 
     public ArticleService(
@@ -17,12 +18,14 @@ public class ArticleService
         VectorService vectorService,
         VoteService voteService,
         TagCacheService tagCache,
+        BackgroundQueue queue,
         ILogger<ArticleService> logger)
     {
         _dbContext = dbContext;
         _vectorService = vectorService;
         _voteService = voteService;
         _tagCache = tagCache;
+        _queue = queue;
         _logger = logger;
     }
 
@@ -66,11 +69,14 @@ public class ArticleService
         existingArticle.Title = updatedArticle.Title;
         existingArticle.Content = updatedArticle.Content;
         existingArticle.Category = updatedArticle.Category;
-        existingArticle.Tags = updatedArticle.Tags;
-        existingArticle.Summary = updatedArticle.Summary;
+        
+        // Clear tags and summary to force regeneration
+        existingArticle.Tags = null; 
+        existingArticle.Summary = null;
 
-        // Update Tag Cache
-        _tagCache.UpdateTags(oldTags, updatedArticle.TagList);
+        // Update Tag Cache (remove old tags since we cleared them)
+        // We don't add new tags yet because they are null
+        _tagCache.RemoveTags(oldTags);
 
         await _dbContext.SaveChangesAsync();
 
@@ -78,6 +84,9 @@ public class ArticleService
         {
             await _vectorService.UpsertVectorAsync(existingArticle.Id, vector);
         }
+
+        // Queue for background processing (Tagging -> Summary -> Embedding)
+        await _queue.EnqueueAsync(existingArticle.Id);
 
         return (OperationResult.Success, existingArticle);
     }
