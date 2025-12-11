@@ -27,7 +27,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite($"Data Source={dbPath}"));
 
 // Register Vector Service
-builder.Services.AddScoped<VectorDbService>();
+builder.Services.AddScoped<VectorService>();
+
+// Register Vote Service
+builder.Services.AddScoped<VoteService>();
+
+// Register Article Service
+builder.Services.AddScoped<ArticleService>();
 
 // Register Auth Service
 builder.Services.AddScoped<AuthService>();
@@ -124,11 +130,11 @@ app.MapPost("/api/auth/login", async (AuthService authService, [FromBody] LoginR
 .WithName("Login");
 
 // Endpoints
-app.MapPost("/api/articles", async (Article article, VectorDbService vectorService, BackgroundQueue queue) =>
+app.MapPost("/api/articles", async (Article article, ArticleService articleService, BackgroundQueue queue) =>
 {
     // Create article without vector first (fast)
     // Tags and Summary will be generated in background
-    var createdArticle = await vectorService.CreateArticleAsync(article, null);
+    var createdArticle = await articleService.CreateArticleAsync(article, null);
     
     // Queue for background processing (Tagging -> Summary -> Embedding)
     await queue.EnqueueAsync(createdArticle.Id);
@@ -137,7 +143,7 @@ app.MapPost("/api/articles", async (Article article, VectorDbService vectorServi
 .WithName("CreateArticle")
 .RequireAuthorization();
 
-app.MapPut("/api/articles/{id}", async (int id, Article article, VectorDbService vectorService, BackgroundQueue queue, HttpContext httpContext) =>
+app.MapPut("/api/articles/{id}", async (int id, Article article, ArticleService articleService, BackgroundQueue queue, HttpContext httpContext) =>
 {
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
@@ -162,7 +168,7 @@ app.MapPut("/api/articles/{id}", async (int id, Article article, VectorDbService
     article.TagList = new List<string>(); 
     article.Summary = null; // Re-generate summary too
 
-    var (status, updatedArticle) = await vectorService.UpdateArticleAsync(id, article, null, userId);
+    var (status, updatedArticle) = await articleService.UpdateArticleAsync(id, article, null, userId);
     
     // Queue for background processing
     if (status == OperationResult.Success)
@@ -180,30 +186,30 @@ app.MapPut("/api/articles/{id}", async (int id, Article article, VectorDbService
 .WithName("UpdateArticle")
 .RequireAuthorization();
 
-app.MapGet("/api/search", async ([FromQuery] string query, VectorDbService vectorService, OnnxEmbeddingService embeddingService, HttpContext httpContext) =>
+app.MapGet("/api/search", async ([FromQuery] string query, ArticleService articleService, OnnxEmbeddingService embeddingService, HttpContext httpContext) =>
 {
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     var queryVector = await embeddingService.GenerateEmbeddingAsync(query);
-    var results = await vectorService.SearchAsync(queryVector, 5, userId);
+    var results = await articleService.SearchAsync(queryVector, 5, userId);
     return Results.Ok(results);
 })
 .WithName("SearchArticles");
 
-app.MapGet("/api/articles", async ([FromQuery] string[]? categories, [FromQuery] string[]? tags, [FromQuery] string? search, [FromQuery] int? page, [FromQuery] int? pageSize, VectorDbService vectorService, HttpContext httpContext) =>
+app.MapGet("/api/articles", async ([FromQuery] string[]? categories, [FromQuery] string[]? tags, [FromQuery] string? search, [FromQuery] int? page, [FromQuery] int? pageSize, ArticleService articleService, HttpContext httpContext) =>
 {
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     var p = page ?? 1;
     var ps = pageSize ?? 20;
-    var articles = await vectorService.GetAllArticlesAsync(userId, categories, tags, search, p, ps);
+    var articles = await articleService.GetAllArticlesAsync(userId, categories, tags, search, p, ps);
     return Results.Ok(articles);
 })
 .WithName("GetAllArticles")
 .RequireAuthorization();
 
-app.MapGet("/api/articles/{id}", async (int id, VectorDbService vectorService, HttpContext httpContext) =>
+app.MapGet("/api/articles/{id}", async (int id, ArticleService articleService, HttpContext httpContext) =>
 {
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    var article = await vectorService.GetArticleByIdAsync(id, userId);
+    var article = await articleService.GetArticleByIdAsync(id, userId);
     
     if (article == null) return Results.NotFound();
     
@@ -211,12 +217,12 @@ app.MapGet("/api/articles/{id}", async (int id, VectorDbService vectorService, H
 })
 .WithName("GetArticleById");
 
-app.MapDelete("/api/articles/{id}", async (int id, VectorDbService vectorService, HttpContext httpContext) =>
+app.MapDelete("/api/articles/{id}", async (int id, ArticleService articleService, HttpContext httpContext) =>
 {
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
 
-    var status = await vectorService.DeleteArticleAsync(id, userId);
+    var status = await articleService.DeleteArticleAsync(id, userId);
 
     return status switch
     {
@@ -228,7 +234,7 @@ app.MapDelete("/api/articles/{id}", async (int id, VectorDbService vectorService
 .WithName("DeleteArticle")
 .RequireAuthorization();
 
-app.MapPost("/api/articles/{id}/vote", async (int id, int? voteValue, VectorDbService vectorService, HttpContext httpContext) =>
+app.MapPost("/api/articles/{id}/vote", async (int id, int? voteValue, VoteService voteService, HttpContext httpContext) =>
 {
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     if (string.IsNullOrEmpty(userId)) return Results.Unauthorized();
@@ -236,7 +242,7 @@ app.MapPost("/api/articles/{id}/vote", async (int id, int? voteValue, VectorDbSe
     // Default to Upvote (1) if not specified, for backward compatibility or simple calls
     int val = voteValue ?? 1;
     
-    var success = await vectorService.VoteAsync(id, userId, val);
+    var success = await voteService.VoteAsync(id, userId, val);
     if (!success) return Results.NotFound();
     
     return Results.Ok();
@@ -244,9 +250,9 @@ app.MapPost("/api/articles/{id}/vote", async (int id, int? voteValue, VectorDbSe
 .WithName("VoteArticle")
 .RequireAuthorization();
 
-app.MapGet("/api/users/{userId}/articles", async (string userId, [FromQuery] string? category, [FromQuery] string? search, VectorDbService vectorService) =>
+app.MapGet("/api/users/{userId}/articles", async (string userId, [FromQuery] string? category, [FromQuery] string? search, ArticleService articleService) =>
 {
-    var articles = await vectorService.GetArticlesByUserIdAsync(userId, category, search);
+    var articles = await articleService.GetArticlesByUserIdAsync(userId, category, search);
     return Results.Ok(articles);
 })
 .WithName("GetUserArticles")

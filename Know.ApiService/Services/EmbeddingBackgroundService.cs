@@ -33,7 +33,7 @@ public class EmbeddingBackgroundService : BackgroundService
                 _logger.LogInformation("Processing embedding for article {Id}", articleId);
 
                 using var scope = _scopeFactory.CreateScope();
-                var vectorService = scope.ServiceProvider.GetRequiredService<VectorDbService>();
+                var articleService = scope.ServiceProvider.GetRequiredService<ArticleService>();
                 var embeddingService = scope.ServiceProvider.GetRequiredService<OnnxEmbeddingService>();
                 var taggingService = scope.ServiceProvider.GetRequiredService<TaggingService>();
                 var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -69,7 +69,7 @@ public class EmbeddingBackgroundService : BackgroundService
                 var textToEmbed = $"{article.Title} {article.Content}";
                 var vector = await embeddingService.GenerateEmbeddingAsync(textToEmbed);
 
-                await vectorService.UpdateArticleEmbeddingAsync(articleId, vector);
+                await articleService.UpdateArticleEmbeddingAsync(articleId, vector);
                 
                 _logger.LogInformation("Completed processing for article {Id}", articleId);
             }
