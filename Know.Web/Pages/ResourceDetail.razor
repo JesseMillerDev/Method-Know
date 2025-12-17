@@ -103,9 +103,9 @@
                         </label>
                         <select @bind="editArticle.Category" class="premium-select">
                             <option value="">Select a category...</option>
-                            <option value="Documentation">Documentation</option>
-                            <option value="Tutorials">Tutorials</option>
-                            <option value="Articles">Articles</option>
+                            <option value="Article">Article</option>
+                            <option value="Code Snippet">Code Snippet</option>
+                            <option value="Learning Resources">Learning Resources</option>
                         </select>
                         @if (showValidation && string.IsNullOrWhiteSpace(editArticle.Category))
                         {

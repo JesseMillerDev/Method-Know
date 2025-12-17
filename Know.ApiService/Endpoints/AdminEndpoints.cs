@@ -68,7 +68,7 @@ public static class AdminEndpoints
                         Content = row.RowData.Passage ?? "No content",
                         UserId = "system_stress_test", // Fixed user for now
                         CreatedAt = DateTime.UtcNow,
-                        Category = "StressTest",
+                        Category = "Article",
                         Tags = "[]"
                     };
                     articles.Add(article);

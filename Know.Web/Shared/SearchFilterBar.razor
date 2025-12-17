@@ -18,9 +18,9 @@
         <!-- Filter Pills -->
         <div class="flex flex-wrap gap-2">
             <button class="filter-pill @(SelectedCategory == "All" ? "active" : "")" @onclick='() => OnCategoryChanged.InvokeAsync("All")'>All</button>
-            <button class="filter-pill @(SelectedCategory == "Documentation" ? "active" : "")" @onclick='() => OnCategoryChanged.InvokeAsync("Documentation")'>Docs</button>
-            <button class="filter-pill @(SelectedCategory == "Tutorials" ? "active" : "")" @onclick='() => OnCategoryChanged.InvokeAsync("Tutorials")'>Tutorials</button>
-            <button class="filter-pill @(SelectedCategory == "Articles" ? "active" : "")" @onclick='() => OnCategoryChanged.InvokeAsync("Articles")'>Articles</button>
+            <button class="filter-pill @(SelectedCategory == "Article" ? "active" : "")" @onclick='() => OnCategoryChanged.InvokeAsync("Article")'>Article</button>
+            <button class="filter-pill @(SelectedCategory == "Code Snippet" ? "active" : "")" @onclick='() => OnCategoryChanged.InvokeAsync("Code Snippet")'>Code Snippet</button>
+            <button class="filter-pill @(SelectedCategory == "Learning Resources" ? "active" : "")" @onclick='() => OnCategoryChanged.InvokeAsync("Learning Resources")'>Learning Resources</button>
         </div>
     </div>
 </div>
