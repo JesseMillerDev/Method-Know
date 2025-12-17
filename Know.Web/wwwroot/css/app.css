@@ -198,42 +198,16 @@
   }
 }
 
-/* Slide In from Right */
+/* Slide In from Top */
 
-@keyframes slideInRight {
+@keyframes slideInFromTop {
   from {
-    transform: translateX(100%);
+    transform: translateY(-20px);
     opacity: 0;
   }
 
   to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-/* Slide Out to Right */
-
-@keyframes slideOutRight {
-  from {
-    transform: translateX(0);
-    opacity: 1;
-  }
-
-  to {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-}
-
-/* Fade In Backdrop */
-
-@keyframes fadeInBackdrop {
-  from {
-    opacity: 0;
-  }
-
-  to {
+    transform: translateY(0);
     opacity: 1;
   }
 }
@@ -250,6 +224,14 @@
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+.animate-slide-in-from-top {
+  animation: slideInFromTop 0.3s ease-out forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
 }
 
 /* ============================================
@@ -2262,6 +2244,10 @@ body {
   grid-template-columns: repeat(1, minmax(0, 1fr));
 }
 
+.flex-row{
+  flex-direction: row;
+}
+
 .flex-col{
   flex-direction: column;
 }
@@ -2272,10 +2258,6 @@ body {
 
 .items-start{
   align-items: flex-start;
-}
-
-.items-end{
-  align-items: flex-end;
 }
 
 .items-center{
@@ -2396,10 +2378,6 @@ body {
 
 .border-t{
   border-top-width: 1px;
-}
-
-.border-none{
-  border-style: none;
 }
 
 .border-\[rgba\(0\2c 0\2c 0\2c 0\.12\)\]{
@@ -2622,6 +2600,11 @@ body {
   padding-right: 1rem;
 }
 
+.px-5{
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+
 .px-6{
   padding-left: 1.5rem;
   padding-right: 1.5rem;
@@ -2655,6 +2638,11 @@ body {
 .py-3{
   padding-top: 0.75rem;
   padding-bottom: 0.75rem;
+}
+
+.py-3\.5{
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
 }
 
 .py-8{
@@ -2724,11 +2712,6 @@ body {
   line-height: 2.5rem;
 }
 
-.text-5xl{
-  font-size: 3rem;
-  line-height: 1;
-}
-
 .text-\[12px\]{
   font-size: 12px;
 }
@@ -2749,8 +2732,21 @@ body {
   font-size: 20px;
 }
 
+.text-\[22px\]{
+  font-size: 22px;
+}
+
 .text-\[30px\]{
   font-size: 30px;
+}
+
+.text-\[32px\]{
+  font-size: 32px;
+}
+
+.text-base{
+  font-size: 1rem;
+  line-height: 1.5rem;
 }
 
 .text-lg{
@@ -2761,6 +2757,11 @@ body {
 .text-sm{
   font-size: 0.875rem;
   line-height: 1.25rem;
+}
+
+.text-xl{
+  font-size: 1.25rem;
+  line-height: 1.75rem;
 }
 
 .text-xs{
@@ -2814,10 +2815,6 @@ body {
 
 .tracking-\[-0\.225px\]{
   letter-spacing: -0.225px;
-}
-
-.tracking-\[-0\.75px\]{
-  letter-spacing: -0.75px;
 }
 
 .tracking-tight{
@@ -3136,9 +3133,9 @@ body {
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 
-.focus\:bg-white:focus{
-  --tw-bg-opacity: 1;
-  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+.focus\:border-slate-300:focus{
+  --tw-border-opacity: 1;
+  border-color: rgb(203 213 225 / var(--tw-border-opacity, 1));
 }
 
 .focus\:ring-2:focus{
@@ -3160,11 +3157,6 @@ body {
 .group:focus-within .group-focus-within\:text-black{
   --tw-text-opacity: 1;
   color: rgb(0 0 0 / var(--tw-text-opacity, 1));
-}
-
-.group:focus-within .group-focus-within\:text-slate-600{
-  --tw-text-opacity: 1;
-  color: rgb(71 85 105 / var(--tw-text-opacity, 1));
 }
 
 .group:hover .group-hover\:scale-105{
@@ -3356,9 +3348,9 @@ body {
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
 }
 
-.dark\:focus\:bg-slate-900:focus:is(.dark *){
-  --tw-bg-opacity: 1;
-  background-color: rgb(15 23 42 / var(--tw-bg-opacity, 1));
+.dark\:focus\:border-slate-600:focus:is(.dark *){
+  --tw-border-opacity: 1;
+  border-color: rgb(71 85 105 / var(--tw-border-opacity, 1));
 }
 
 .dark\:focus\:ring-slate-400:focus:is(.dark *){
@@ -3410,14 +3402,6 @@ body {
     width: 100%;
   }
 
-  .sm\:flex-row{
-    flex-direction: row;
-  }
-
-  .sm\:items-center{
-    align-items: center;
-  }
-
   .sm\:rounded-xl{
     border-radius: 0.75rem;
   }
@@ -3447,8 +3431,8 @@ body {
     display: block;
   }
 
-  .md\:w-64{
-    width: 16rem;
+  .md\:hidden{
+    display: none;
   }
 
   .md\:w-auto{
@@ -3479,6 +3463,15 @@ body {
 
   .md\:text-left{
     text-align: left;
+  }
+
+  .md\:text-\[40px\]{
+    font-size: 40px;
+  }
+
+  .md\:text-xl{
+    font-size: 1.25rem;
+    line-height: 1.75rem;
   }
 }
 

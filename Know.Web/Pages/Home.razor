@@ -15,76 +15,62 @@
 <PageTitle>Resources</PageTitle>
 
 <div class="flex flex-col md:flex-row gap-8 items-start">
-    <!-- Sidebar Filters -->
-    <aside class="w-full md:w-64 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 transition-colors duration-200">
-        <!-- Header -->
-        <div class="flex items-center justify-between mb-4">
-            <h2 class="text-[18px] font-semibold text-slate-900 dark:text-white font-['Inter']">Filters</h2>
-            <button @onclick="ResetFilters" class="text-[14px] font-normal text-slate-900 dark:text-slate-300 underline font-['Inter'] hover:text-slate-700 dark:hover:text-white">
-                Reset filters
-            </button>
-        </div>
-
-        <!-- Resource Type Filter -->
-        <div class="mb-6">
-            <h3 class="text-[16px] font-normal text-slate-900 dark:text-white mb-3 font-['Inter']">Resource Type</h3>
-            <div class="space-y-3">
-                <label class="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" 
-                           checked="@(selectedCategories.Contains("Articles"))"
-                           @onchange='(e) => ToggleCategory("Articles", e.Value)'
-                           class="w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-slate-900 dark:focus:ring-slate-400 bg-white dark:bg-slate-800 transition-colors" />
-                    <span class="text-[14px] font-medium text-slate-900 dark:text-slate-300 group-hover:text-slate-700 dark:group-hover:text-white font-['Inter']">Articles</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" 
-                           checked="@(selectedCategories.Contains("Tutorials"))"
-                           @onchange='(e) => ToggleCategory("Tutorials", e.Value)'
-                           class="w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-slate-900 dark:focus:ring-slate-400 bg-white dark:bg-slate-800 transition-colors" />
-                    <span class="text-[14px] font-medium text-slate-900 dark:text-slate-300 group-hover:text-slate-700 dark:group-hover:text-white font-['Inter']">Tutorials</span>
-                </label>
-                <label class="flex items-center gap-2 cursor-pointer group">
-                    <input type="checkbox" 
-                           checked="@(selectedCategories.Contains("Documentation"))"
-                           @onchange='(e) => ToggleCategory("Documentation", e.Value)'
-                           class="w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-slate-900 dark:focus:ring-slate-400 bg-white dark:bg-slate-800 transition-colors" />
-                    <span class="text-[14px] font-medium text-slate-900 dark:text-slate-300 group-hover:text-slate-700 dark:group-hover:text-white font-['Inter']">Documentation</span>
-                </label>
-            </div>
-        </div>
-
-        <!-- Tags Filter -->
-        <div>
-            <h3 class="text-[16px] font-normal text-slate-900 dark:text-white mb-3 font-['Inter']">Tags</h3>
-            <div class="flex flex-wrap gap-2">
-                @foreach (var tag in uniqueTags.Take(15))
-                {
-                    <button @onclick="() => ToggleTag(tag, !selectedTags.Contains(tag))"
-                            class="px-2.5 py-1 rounded-full text-[12px] font-medium transition-colors border @(selectedTags.Contains(tag) ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white" : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600")">
-                        @tag
-                    </button>
-                }
-            </div>
-        </div>
+    <!-- Sidebar Filters (Desktop only) -->
+    <aside class="hidden md:block w-64 shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 transition-colors duration-200">
+        @FilterContent
     </aside>
 
     <!-- Main Content -->
     <div class="flex-1 w-full min-w-0">
         <!-- Header -->
-        <div class="mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-                <h1 class="text-[30px] font-semibold tracking-[-0.75px] text-slate-900 dark:text-white font-['Inter'] mb-1">Discover Resources</h1>
-                <p class="text-[20px] font-normal text-slate-900 dark:text-slate-300 tracking-[-0.1px] font-['Inter']">Explore shared knowledge from our community</p>
+        <div class="mb-8">
+            <h1 class="text-[32px] md:text-[40px] font-bold tracking-tight text-slate-900 dark:text-white mb-2 font-['Inter']">Discover Resources</h1>
+            <p class="text-lg md:text-xl text-slate-600 dark:text-slate-400 font-['Inter']">Explore shared knowledge from our community</p>
+        </div>
+
+        <!-- Search & Filter Bar -->
+        <div class="flex flex-row gap-3 mb-4">
+            <div class="relative flex-1">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-400">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>
+                    </svg>
+                </div>
+                <input 
+                    type="text" 
+                    placeholder="Search resource..." 
+                    class="block w-full pl-11 pr-4 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-slate-200 dark:focus:ring-slate-700 focus:border-slate-300 dark:focus:border-slate-600 transition-all text-base"
+                    value="@searchQuery"
+                    @oninput="OnSearchInput"
+                />
             </div>
-            
-            <button @onclick="OpenCreateModal" class="shrink-0 flex items-center gap-2 px-4 py-2 bg-slate-900 dark:bg-blue-600 text-white dark:text-white text-sm font-medium rounded-lg hover:bg-slate-800 dark:hover:bg-blue-700 transition-colors shadow-sm hover:shadow">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
+            <button @onclick="ToggleFilter" class="md:hidden flex items-center justify-center gap-2 px-5 py-3.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="21" y1="4" x2="14" y2="4"/><line x1="10" y1="4" x2="3" y2="4"/><line x1="21" y1="12" x2="12" y2="12"/><line x1="8" y1="12" x2="3" y2="12"/><line x1="21" y1="20" x2="16" y2="20"/><line x1="12" y1="20" x2="3" y2="20"/><line x1="14" y1="2" x2="14" y2="6"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="16" y1="18" x2="16" y2="22"/>
                 </svg>
-                Add Resource
+                <span>Filter</span>
             </button>
         </div>
+
+        <!-- Mobile Slide-down Filter -->
+        @if (isFilterExpanded)
+        {
+            <div class="md:hidden mb-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-lg overflow-hidden animate-slide-in-from-top">
+                <div class="p-6">
+                    <h2 class="text-xl font-bold text-slate-900 dark:text-white mb-6">Filters</h2>
+                    @FilterContent
+                    
+                    <div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 flex gap-3">
+                        <button @onclick="ToggleFilter" class="flex-1 px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                            Cancel
+                        </button>
+                        <button @onclick="ToggleFilter" class="flex-1 px-4 py-3 bg-slate-900 dark:bg-blue-600 text-white rounded-xl font-semibold hover:bg-slate-800 dark:hover:bg-blue-700 transition-all">
+                            Apply Filters
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
 
         <!-- Loading State & Grid -->
         @if (isLoading)
@@ -127,9 +113,54 @@
 />
 
 @code {
+    private RenderFragment FilterContent => @<text>
+        <!-- Resource Type Filter -->
+        <div class="mb-6">
+            <h3 class="text-[16px] font-normal text-slate-900 dark:text-white mb-3 font-['Inter']">Resource Type</h3>
+            <div class="space-y-3">
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" 
+                           checked="@(selectedCategories.Contains("Articles"))"
+                           @onchange='(e) => ToggleCategory("Articles", e.Value)'
+                           class="w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-slate-900 dark:focus:ring-slate-400 bg-white dark:bg-slate-800 transition-colors" />
+                    <span class="text-[14px] font-medium text-slate-900 dark:text-slate-300 group-hover:text-slate-700 dark:group-hover:text-white font-['Inter']">Articles</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" 
+                           checked="@(selectedCategories.Contains("Tutorials"))"
+                           @onchange='(e) => ToggleCategory("Tutorials", e.Value)'
+                           class="w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-slate-900 dark:focus:ring-slate-400 bg-white dark:bg-slate-800 transition-colors" />
+                    <span class="text-[14px] font-medium text-slate-900 dark:text-slate-300 group-hover:text-slate-700 dark:group-hover:text-white font-['Inter']">Tutorials</span>
+                </label>
+                <label class="flex items-center gap-2 cursor-pointer group">
+                    <input type="checkbox" 
+                           checked="@(selectedCategories.Contains("Documentation"))"
+                           @onchange='(e) => ToggleCategory("Documentation", e.Value)'
+                           class="w-3.5 h-3.5 rounded border-gray-300 dark:border-slate-600 text-slate-900 dark:text-white focus:ring-slate-900 dark:focus:ring-slate-400 bg-white dark:bg-slate-800 transition-colors" />
+                    <span class="text-[14px] font-medium text-slate-900 dark:text-slate-300 group-hover:text-slate-700 dark:group-hover:text-white font-['Inter']">Documentation</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Tags Filter -->
+        <div>
+            <h3 class="text-[16px] font-normal text-slate-900 dark:text-white mb-3 font-['Inter']">Tags</h3>
+            <div class="flex flex-wrap gap-2">
+                @foreach (var tag in uniqueTags.Take(15))
+                {
+                    <button @onclick="() => ToggleTag(tag, !selectedTags.Contains(tag))"
+                            class="px-2.5 py-1 rounded-full text-[12px] font-medium transition-colors border @(selectedTags.Contains(tag) ? "bg-slate-900 dark:bg-white text-white dark:text-slate-900 border-slate-900 dark:border-white" : "bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600")">
+                        @tag
+                    </button>
+                }
+            </div>
+        </div>
+    </text>;
+
     private List<Article> articles = new();
     private bool isLoading = true;
     private string searchQuery = "";
+    private bool isFilterExpanded = false;
     
     // Filters
     private HashSet<string> selectedCategories = new();
@@ -152,6 +183,7 @@
     protected override async Task OnInitializedAsync()
     {
         AppState.OnSearchChanged += HandleSearchChanged;
+        AppState.OnAddResourceRequested += OpenCreateModal;
         searchQuery = AppState.SearchQuery;
 
         try
@@ -203,6 +235,18 @@
     public void Dispose()
     {
         AppState.OnSearchChanged -= HandleSearchChanged;
+        AppState.OnAddResourceRequested -= OpenCreateModal;
+    }
+
+    private void ToggleFilter()
+    {
+        isFilterExpanded = !isFilterExpanded;
+        StateHasChanged();
+    }
+
+    private void OnSearchInput(ChangeEventArgs e)
+    {
+        AppState.SetSearchQuery(e.Value?.ToString() ?? "");
     }
 
     private async void HandleSearchChanged(string query)
