@@ -85,6 +85,7 @@
                 SelectedCategory="@(selectedCategories.Count > 0 ? string.Join(", ", selectedCategories) : "All")"
                 EmptyStateMessage="No resources match your filters."
                 OnViewArticle="ViewArticle"
+                OnTagClick="HandleTagClick"
             />
             
             @if (hasMoreArticles && articles.Any())
@@ -292,6 +293,13 @@
     {
         currentPage++;
         await RefreshArticles(reset: false);
+    }
+
+    private async Task HandleTagClick(string tag)
+    {
+        selectedTags.Clear();
+        selectedTags.Add(tag);
+        await RefreshArticles(reset: true);
     }
 
     private void OpenCreateModal()

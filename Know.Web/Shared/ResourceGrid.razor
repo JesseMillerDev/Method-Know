@@ -58,6 +58,26 @@ else
                     <p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed line-clamp-3 mb-4">
                         @(string.IsNullOrWhiteSpace(article.Summary) ? GetContentPreview(article.Content) : article.Summary)
                     </p>
+
+                    <!-- Tags -->
+                    @if (article.TagList != null && article.TagList.Any())
+                    {
+                        <div class="flex flex-wrap gap-1.5 mb-4">
+                            @foreach (var tag in article.TagList.Take(3))
+                            {
+                                <button class="px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-md border border-slate-100 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                        @onclick="() => OnTagClick.InvokeAsync(tag)" @onclick:stopPropagation="true">
+                                    @tag
+                                </button>
+                            }
+                            @if (article.TagList.Count > 3)
+                            {
+                                <span class="px-2 py-0.5 text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                                    +@(article.TagList.Count - 3) more
+                                </span>
+                            }
+                        </div>
+                    }
                 </div>
 
                 <!-- Footer: Tags & Stats -->
@@ -86,6 +106,7 @@ else
     [Parameter] public string SelectedCategory { get; set; } = "All";
     [Parameter] public string EmptyStateMessage { get; set; } = "Be the first to share knowledge with the community!";
     [Parameter] public EventCallback<int> OnViewArticle { get; set; }
+    [Parameter] public EventCallback<string> OnTagClick { get; set; }
     
     [Inject] public HttpClient Http { get; set; } = default!;
 
