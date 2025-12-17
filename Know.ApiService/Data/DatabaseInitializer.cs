@@ -83,7 +83,7 @@ public static class DatabaseInitializer
             var createTableSql = @"
                 CREATE VIRTUAL TABLE IF NOT EXISTS vec_articles USING vec0(
                     article_id INTEGER PRIMARY KEY, 
-                    embedding float[384]
+                    embedding float[3072]
                 );";
 
             await connection.ExecuteAsync(createTableSql);

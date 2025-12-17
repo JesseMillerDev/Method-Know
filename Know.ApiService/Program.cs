@@ -38,15 +38,12 @@ builder.Services.AddScoped<ArticleService>();
 // Register Auth Service
 builder.Services.AddScoped<AuthService>();
 
-// Register Embedding Service
-builder.Services.AddSingleton<OnnxEmbeddingService>();
-
 // Register Background Services
 builder.Services.AddSingleton<BackgroundQueue>();
 builder.Services.AddHostedService<EmbeddingBackgroundService>();
 
-// Register Tagging Service
-builder.Services.AddSingleton<TaggingService>();
+// Register Gemini Service
+builder.Services.AddScoped<GeminiService>();
 
 // Register Tag Cache Service
 builder.Services.AddSingleton<TagCacheService>();
@@ -160,10 +157,10 @@ app.MapPut("/api/articles/{id}", async (int id, Article article, ArticleService 
 .WithName("UpdateArticle")
 .RequireAuthorization();
 
-app.MapGet("/api/search", async ([FromQuery] string query, ArticleService articleService, OnnxEmbeddingService embeddingService, HttpContext httpContext) =>
+app.MapGet("/api/search", async ([FromQuery] string query, ArticleService articleService, GeminiService geminiService, HttpContext httpContext) =>
 {
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    var queryVector = await embeddingService.GenerateEmbeddingAsync(query);
+    var queryVector = await geminiService.GenerateEmbeddingAsync(query);
     var results = await articleService.SearchAsync(queryVector, 5, userId);
     return Results.Ok(results);
 })

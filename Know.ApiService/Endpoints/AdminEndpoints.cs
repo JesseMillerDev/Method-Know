@@ -1,3 +1,4 @@
+using Dapper;
 using Know.ApiService.Data;
 using Know.ApiService.Services;
 using Know.Shared.Models;
@@ -16,6 +17,7 @@ public static class AdminEndpoints
 
         admin.MapPost("/seed-stress-test", SeedStressTest);
         admin.MapPost("/retag-missing", RetagMissing);
+        admin.MapPost("/clear-all", ClearAll);
     }
 
     public static async Task<IResult> SeedStressTest(
@@ -105,6 +107,26 @@ public static class AdminEndpoints
         }
 
         return Results.Ok(new { Message = $"Queued {articles.Count} articles for reprocessing." });
+    }
+
+    private static async Task<IResult> ClearAll(AppDbContext db, VectorService vectorService, TagCacheService tagCache)
+    {
+        // 1. Clear ArticleVotes
+        await db.ArticleVotes.ExecuteDeleteAsync();
+
+        // 2. Clear Articles
+        await db.Articles.ExecuteDeleteAsync();
+
+        // 3. Clear Vector Table
+        // We need to do this via VectorService or raw SQL because it's a virtual table
+        var connection = db.Database.GetDbConnection();
+        if (connection.State != System.Data.ConnectionState.Open) await connection.OpenAsync();
+        await connection.ExecuteAsync("DELETE FROM vec_articles;");
+
+        // 4. Clear Tag Cache
+        tagCache.Clear();
+
+        return Results.Ok(new { Message = "Successfully cleared all articles, votes, vectors, and tag cache." });
     }
 
     private class HfDatasetResponse

@@ -120,4 +120,9 @@ public class TagCacheService
             .Select(kvp => kvp.Key)
             .ToList();
     }
+
+    public void Clear()
+    {
+        _tagCounts.Clear();
+    }
 }

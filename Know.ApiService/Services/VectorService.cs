@@ -9,11 +9,47 @@ public class VectorService
 {
     private readonly AppDbContext _dbContext;
     private readonly ILogger<VectorService> _logger;
+    private readonly IConfiguration _configuration;
 
-    public VectorService(AppDbContext dbContext, ILogger<VectorService> logger)
+    public VectorService(AppDbContext dbContext, ILogger<VectorService> logger, IConfiguration configuration)
     {
         _dbContext = dbContext;
         _logger = logger;
+        _configuration = configuration;
+    }
+
+    private string GetExtensionPath()
+    {
+        // Allow override via configuration
+        var configPath = _configuration["VectorDb:LibraryPath"];
+        if (!string.IsNullOrEmpty(configPath))
+        {
+            return configPath;
+        }
+
+        string fileName;
+        if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+        {
+            fileName = "vec0.dll";
+        }
+        else if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+        {
+            fileName = "vec0.dylib";
+        }
+        else if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+        {
+            fileName = "vec0.so";
+        }
+        else
+        {
+            // Fallback or throw? Let's default to linux/mac style or just throw.
+            // For now, default to dylib as it was before, or maybe throw PlatformNotSupportedException
+            // But to be safe let's just default to what it was if we can't detect, or maybe just log warning.
+            // Let's stick to the plan: detect OS.
+            fileName = "vec0.dylib"; // Default fallback
+        }
+
+        return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Libs", fileName);
     }
 
     public async Task UpsertVectorAsync(int articleId, float[] vector)
@@ -26,7 +62,7 @@ public class VectorService
 
         try
         {
-            var extensionPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Libs", "vec0.dylib");
+            var extensionPath = GetExtensionPath();
             ((Microsoft.Data.Sqlite.SqliteConnection)connection).LoadExtension(extensionPath);
         }
         catch { }
@@ -76,7 +112,7 @@ public class VectorService
 
         try
         {
-            var extensionPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Libs", "vec0.dylib");
+            var extensionPath = GetExtensionPath();
             ((Microsoft.Data.Sqlite.SqliteConnection)connection).LoadExtension(extensionPath);
         }
         catch (Exception ex)

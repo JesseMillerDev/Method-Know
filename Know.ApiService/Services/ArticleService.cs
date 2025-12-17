@@ -71,7 +71,7 @@ public class ArticleService
         existingArticle.Category = updatedArticle.Category;
         
         // Clear tags and summary to force regeneration
-        existingArticle.Tags = null; 
+        existingArticle.Tags = "[]"; 
         existingArticle.Summary = null;
 
         // Update Tag Cache (remove old tags since we cleared them)
@@ -94,6 +94,23 @@ public class ArticleService
     public async Task UpdateArticleEmbeddingAsync(int articleId, float[] vector)
     {
         await _vectorService.UpsertVectorAsync(articleId, vector);
+    }
+    
+    public async Task UpdateArticleTagsAndSummaryAsync(int articleId, List<string> tags, string summary)
+    {
+        var article = await _dbContext.Articles.FindAsync(articleId);
+        if (article == null) return;
+
+        article.TagList = tags;
+        article.Summary = summary;
+
+        // Update Tag Cache
+        if (tags.Any())
+        {
+            _tagCache.AddTags(tags);
+        }
+
+        await _dbContext.SaveChangesAsync();
     }
 
     public async Task<OperationResult> DeleteArticleAsync(int id, string userId)
@@ -166,10 +183,15 @@ public class ArticleService
         if (tags != null && tags.Any())
         {
             var allArticles = await query.ToListAsync();
-            articles = allArticles.Where(a => a.TagList.Any(t => tags.Contains(t)))
-                                  .Skip((page - 1) * pageSize)
-                                  .Take(pageSize)
-                                  .ToList();
+            articles = allArticles
+                .Select(a => new { Article = a, MatchCount = a.TagList.Count(t => tags.Contains(t)) })
+                .Where(x => x.MatchCount > 0)
+                .OrderByDescending(x => x.MatchCount)
+                .ThenByDescending(x => x.Article.CreatedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(x => x.Article)
+                .ToList();
         }
         else
         {
