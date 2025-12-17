@@ -44,21 +44,6 @@ else
     />
 }
 
-<!-- Resource Modal Component -->
-<ResourceModal 
-    ShowModal="@showModal"
-    IsClosing="@isClosing"
-    ModalMode="@modalMode"
-    SelectedArticle="@selectedArticle"
-    UserId="@userId"
-    OnClose="@CloseModal"
-    OnArticleCreated="@HandleArticleCreated"
-    OnArticleUpdated="@HandleArticleUpdated"
-    OnArticleDeleted="@HandleArticleDeleted"
-/>
-
-
-
 @code {
     private List<Article> articles = new();
     private bool isLoading = true;
@@ -66,15 +51,11 @@ else
     private string selectedCategory = "All";
     private string? userId;
     
-    // Modal state
-    private bool showModal = false;
-    private bool isClosing = false;
-    private string modalMode = "create"; // "create" or "view"
-    private Article? selectedArticle = null;
-
     protected override async Task OnInitializedAsync()
     {
-        AppState.OnAddResourceRequested += OpenModal;
+        AppState.OnArticleCreated += HandleArticleCreated;
+        AppState.OnArticleUpdated += HandleArticleUpdated;
+        AppState.OnArticleDeleted += HandleArticleDeleted;
         try
         {
             // Get user ID from authentication state
@@ -115,7 +96,9 @@ else
 
     public void Dispose()
     {
-        AppState.OnAddResourceRequested -= OpenModal;
+        AppState.OnArticleCreated -= HandleArticleCreated;
+        AppState.OnArticleUpdated -= HandleArticleUpdated;
+        AppState.OnArticleDeleted -= HandleArticleDeleted;
     }
 
 
@@ -160,53 +143,27 @@ else
             return date.ToString("MMM dd, yyyy");
     }
 
-    private void OpenModal()
-    {
-        modalMode = "create";
-        selectedArticle = null;
-        showModal = true;
-        isClosing = false;
-    }
-
     private void ViewArticle(int articleId)
     {
-        selectedArticle = articles.FirstOrDefault(a => a.Id == articleId);
-        if (selectedArticle != null)
+        var article = articles.FirstOrDefault(a => a.Id == articleId);
+        if (article != null)
         {
-            modalMode = "view";
-            showModal = true;
-            isClosing = false;
+            AppState.RequestViewResource(article);
         }
     }
 
-    private async Task CloseModal()
-    {
-        isClosing = true;
-        StateHasChanged();
-        await Task.Delay(300); // Wait for animation
-        showModal = false;
-        isClosing = false;
-        StateHasChanged();
-    }
-
-    private async Task HandleArticleCreated(Article article)
+    private async void HandleArticleCreated(Article article)
     {
         await RefreshArticles();
     }
 
-    private async Task HandleArticleUpdated(Article article)
+    private async void HandleArticleUpdated(Article article)
     {
-        selectedArticle = article;
         await RefreshArticles();
     }
 
-    private async Task HandleArticleDeleted(int articleId)
+    private async void HandleArticleDeleted(int articleId)
     {
-        if (selectedArticle?.Id == articleId)
-        {
-            selectedArticle = null;
-        }
-
         await RefreshArticles();
     }
 

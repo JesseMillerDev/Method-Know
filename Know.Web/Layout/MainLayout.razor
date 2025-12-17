@@ -101,6 +101,19 @@
     <main class="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-12 py-8">
         @Body
     </main>
+
+    <!-- Global Resource Modal -->
+    <ResourceModal 
+        ShowModal="@showModal"
+        IsClosing="@isClosing"
+        ModalMode="@modalMode"
+        SelectedArticle="@selectedArticle"
+        UserId="@userId"
+        OnClose="@CloseModal"
+        OnArticleCreated="@HandleArticleCreated"
+        OnArticleUpdated="@HandleArticleUpdated"
+        OnArticleDeleted="@HandleArticleDeleted"
+    />
 </div>
 
 @code {
@@ -109,16 +122,35 @@
     [Inject] Blazored.LocalStorage.ILocalStorageService LocalStorage { get; set; } = default!;
 
     private bool showDropdown = false;
+    private bool showModal = false;
+    private bool isClosing = false;
+    private string modalMode = "create"; // "create" or "view"
+    private Know.Shared.Models.Article? selectedArticle = null;
+    private string? userId;
 
     protected override async Task OnInitializedAsync()
     {
         ThemeService.OnChange += StateHasChanged;
         await ThemeService.InitializeAsync();
+
+        AppState.OnAddResourceRequested += OpenCreateModal;
+        AppState.OnViewResourceRequested += OpenViewModal;
+
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            userId = user.FindFirst("sub")?.Value 
+                ?? user.FindFirst("nameid")?.Value 
+                ?? user.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+        }
     }
 
     public void Dispose()
     {
         ThemeService.OnChange -= StateHasChanged;
+        AppState.OnAddResourceRequested -= OpenCreateModal;
+        AppState.OnViewResourceRequested -= OpenViewModal;
     }
 
     private void ToggleDropdown()
@@ -129,6 +161,49 @@
     private void HandleAddResource()
     {
         AppState.RequestAddResource();
+    }
+
+    private void OpenCreateModal()
+    {
+        modalMode = "create";
+        selectedArticle = null;
+        showModal = true;
+        isClosing = false;
+        StateHasChanged();
+    }
+
+    private void OpenViewModal(Know.Shared.Models.Article article)
+    {
+        selectedArticle = article;
+        modalMode = "view";
+        showModal = true;
+        isClosing = false;
+        StateHasChanged();
+    }
+
+    private async Task CloseModal()
+    {
+        isClosing = true;
+        StateHasChanged();
+        await Task.Delay(300); // Wait for animation
+        showModal = false;
+        isClosing = false;
+        StateHasChanged();
+    }
+
+    private void HandleArticleCreated(Know.Shared.Models.Article article)
+    {
+        AppState.NotifyArticleCreated(article);
+    }
+
+    private void HandleArticleUpdated(Know.Shared.Models.Article article)
+    {
+        AppState.NotifyArticleUpdated(article);
+    }
+
+    private void HandleArticleDeleted(int articleId)
+    {
+        AppState.NotifyArticleDeleted(articleId);
     }
 
     private void OnSearchInput(ChangeEventArgs e)

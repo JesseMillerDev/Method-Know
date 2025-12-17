@@ -99,20 +99,6 @@
         }
     </div>
 </div>
-
-<!-- Resource Modal Component -->
-<ResourceModal 
-    ShowModal="@showModal"
-    IsClosing="@isClosing"
-    ModalMode="@modalMode"
-    SelectedArticle="@selectedArticle"
-    UserId="@userId"
-    OnClose="@CloseModal"
-    OnArticleCreated="@HandleArticleCreated"
-    OnArticleUpdated="@HandleArticleUpdated"
-    OnArticleDeleted="@HandleArticleDeleted"
-/>
-
 @code {
     private RenderFragment FilterContent => @<text>
         <!-- Resource Type Filter -->
@@ -170,21 +156,17 @@
 
     private string? userId;
     
-    // Modal state
-    private bool showModal = false;
-    private bool isClosing = false;
-    private string modalMode = "view"; // "create" or "view"
-    private Article? selectedArticle = null;
-
     // Pagination
     private int currentPage = 1;
     private const int PageSize = 20;
     private bool hasMoreArticles = true;
-
+    
     protected override async Task OnInitializedAsync()
     {
         AppState.OnSearchChanged += HandleSearchChanged;
-        AppState.OnAddResourceRequested += OpenCreateModal;
+        AppState.OnArticleCreated += HandleArticleCreated;
+        AppState.OnArticleUpdated += HandleArticleUpdated;
+        AppState.OnArticleDeleted += HandleArticleDeleted;
         searchQuery = AppState.SearchQuery;
 
         try
@@ -236,7 +218,9 @@
     public void Dispose()
     {
         AppState.OnSearchChanged -= HandleSearchChanged;
-        AppState.OnAddResourceRequested -= OpenCreateModal;
+        AppState.OnArticleCreated -= HandleArticleCreated;
+        AppState.OnArticleUpdated -= HandleArticleUpdated;
+        AppState.OnArticleDeleted -= HandleArticleDeleted;
     }
 
     private void ToggleFilter()
@@ -302,43 +286,22 @@
         await RefreshArticles(reset: true);
     }
 
-    private void OpenCreateModal()
-    {
-        modalMode = "create";
-        selectedArticle = null;
-        showModal = true;
-        isClosing = false;
-    }
-
     private void ViewArticle(int articleId)
     {
-        selectedArticle = articles.FirstOrDefault(a => a.Id == articleId);
-        if (selectedArticle != null)
+        var article = articles.FirstOrDefault(a => a.Id == articleId);
+        if (article != null)
         {
-            modalMode = "view";
-            showModal = true;
-            isClosing = false;
+            AppState.RequestViewResource(article);
         }
     }
 
-    private async Task CloseModal()
-    {
-        isClosing = true;
-        StateHasChanged();
-        await Task.Delay(300); // Wait for animation
-        showModal = false;
-        isClosing = false;
-        StateHasChanged();
-    }
-
-    private async Task HandleArticleCreated(Article article)
+    private async void HandleArticleCreated(Article article)
     {
         await RefreshArticles(reset: true);
     }
 
-    private async Task HandleArticleUpdated(Article article)
+    private async void HandleArticleUpdated(Article article)
     {
-        selectedArticle = article;
         // Just update the item in the list locally to avoid full reload
         var index = articles.FindIndex(a => a.Id == article.Id);
         if (index != -1)
@@ -348,12 +311,8 @@
         }
     }
 
-    private async Task HandleArticleDeleted(int articleId)
+    private async void HandleArticleDeleted(int articleId)
     {
-        if (selectedArticle?.Id == articleId)
-        {
-            selectedArticle = null;
-        }
         articles.RemoveAll(a => a.Id == articleId);
         StateHasChanged();
     }

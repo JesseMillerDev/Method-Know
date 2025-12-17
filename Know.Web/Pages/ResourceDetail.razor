@@ -7,6 +7,8 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject Know.Web.Services.AppState AppState
+@implements IDisposable
 
 <div class="min-h-screen bg-gray-50 dark:bg-slate-950 pb-12">
     <!-- Header -->
@@ -220,6 +222,8 @@
             }
 
             await LoadArticle();
+            AppState.OnArticleUpdated += HandleArticleUpdated;
+            AppState.OnArticleDeleted += HandleArticleDeleted;
         }
         catch (Exception ex)
         {
@@ -229,6 +233,29 @@
         finally
         {
             isLoading = false;
+        }
+    }
+
+    public void Dispose()
+    {
+        AppState.OnArticleUpdated -= HandleArticleUpdated;
+        AppState.OnArticleDeleted -= HandleArticleDeleted;
+    }
+
+    private void HandleArticleUpdated(Article updatedArticle)
+    {
+        if (article != null && updatedArticle.Id == article.Id)
+        {
+            article = updatedArticle;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleArticleDeleted(int articleId)
+    {
+        if (article != null && articleId == article.Id)
+        {
+            Navigation.NavigateTo("/");
         }
     }
 
