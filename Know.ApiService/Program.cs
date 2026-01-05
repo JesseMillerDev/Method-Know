@@ -157,11 +157,17 @@ app.MapPut("/api/articles/{id}", async (int id, Article article, ArticleService 
 .WithName("UpdateArticle")
 .RequireAuthorization();
 
-app.MapGet("/api/search", async ([FromQuery] string query, ArticleService articleService, GeminiService geminiService, HttpContext httpContext) =>
+app.MapGet("/api/search", async ([FromQuery] string query, [FromQuery] int? limit, ArticleService articleService, GeminiService geminiService, HttpContext httpContext) =>
 {
+    if (string.IsNullOrWhiteSpace(query))
+    {
+        return Results.BadRequest("Query is required.");
+    }
+
     var userId = httpContext.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
     var queryVector = await geminiService.GenerateEmbeddingAsync(query);
-    var results = await articleService.SearchAsync(queryVector, 5, userId);
+    var cappedLimit = Math.Clamp(limit ?? 20, 1, 50);
+    var results = await articleService.SearchAsync(queryVector, cappedLimit, userId);
     return Results.Ok(results);
 })
 .WithName("SearchArticles");

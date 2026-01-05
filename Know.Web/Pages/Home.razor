@@ -159,7 +159,13 @@
     // Pagination
     private int currentPage = 1;
     private const int PageSize = 20;
+    private const int SemanticMaxLimit = 50;
     private bool hasMoreArticles = true;
+
+    private bool UseSemanticSearch =>
+        !string.IsNullOrWhiteSpace(searchQuery) &&
+        selectedCategories.Count == 0 &&
+        selectedTags.Count == 0;
     
     protected override async Task OnInitializedAsync()
     {
@@ -330,6 +336,27 @@
             }
             
             StateHasChanged();
+
+            if (UseSemanticSearch)
+            {
+                var desiredLimit = Math.Min(SemanticMaxLimit, currentPage * PageSize);
+                var apiUrl = $"/api/search?query={Uri.EscapeDataString(searchQuery)}&limit={desiredLimit}";
+                var semanticResults = await Http.GetFromJsonAsync<List<Article>>(apiUrl) ?? new();
+
+                articles = semanticResults;
+
+                if (desiredLimit >= SemanticMaxLimit)
+                {
+                    hasMoreArticles = false;
+                }
+                else
+                {
+                    hasMoreArticles = semanticResults.Count >= desiredLimit;
+                }
+
+                StateHasChanged();
+                return;
+            }
 
             var queryParams = new List<string>();
             
