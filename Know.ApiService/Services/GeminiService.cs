@@ -28,19 +28,21 @@ Do NOT output any other text, explanation, or markdown formatting.
 Text:
 {content}";
 
-        var result = await GenerateContentAsync("gemini-3-flash-preview", prompt);
+        var result = await GenerateContentAsync("gemini-3-flash-preview", prompt, "application/json");
         return ParseTags(result);
     }
 
     public async Task<string> GenerateSummaryAsync(string content)
     {
-        var prompt = $@"Create a concise 2-sentence summary of the following technical text.
-Do not include any introductory text. Just return the summary itself.
+        var prompt = $@"Write a single-sentence summary of the content below.
+Focus on what the text says, not the author's intent, request, or meta-commentary.
+Return plain text only. Do not wrap the response in JSON or quotes.
 
 Text:
 {content}";
 
-        return await GenerateContentAsync("gemini-3-flash-preview", prompt);
+        var result = await GenerateContentAsync("gemini-3-flash-preview", prompt, "text/plain");
+        return ParseSummary(result);
     }
 
     public async Task<float[]> GenerateEmbeddingAsync(string text)
@@ -60,7 +62,7 @@ Text:
         return result?.Embedding?.Values ?? Array.Empty<float>();
     }
 
-    private async Task<string> GenerateContentAsync(string model, string prompt)
+    private async Task<string> GenerateContentAsync(string model, string prompt, string responseMimeType)
     {
         var url = $"{BaseUrl}/models/{model}:generateContent?key={_apiKey}";
         
@@ -74,7 +76,7 @@ Text:
             {
                 temperature = 0.1,
                 maxOutputTokens = 1000,
-                response_mime_type = "application/json"
+                response_mime_type = responseMimeType
             }
         };
 
@@ -98,6 +100,34 @@ Text:
             _logger.LogError(ex, "Failed to parse tags from Gemini output: {Output}", output);
             return new List<string>();
         }
+    }
+
+    private string ParseSummary(string output)
+    {
+        if (string.IsNullOrWhiteSpace(output))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = output.Trim();
+        if (trimmed.StartsWith("{") && trimmed.EndsWith("}"))
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(trimmed);
+                if (doc.RootElement.TryGetProperty("summary", out var summaryElement))
+                {
+                    var summary = summaryElement.GetString();
+                    return summary?.Trim() ?? string.Empty;
+                }
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Summary response looked like JSON but failed to parse: {Output}", output);
+            }
+        }
+
+        return trimmed;
     }
 
     private class GeminiResponse
