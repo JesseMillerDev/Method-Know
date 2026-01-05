@@ -79,7 +79,12 @@ Metrics:
 - Initial page load time: TBD (measure with Lighthouse or WebPageTest)
 
 ## Testing Approach
-Automated tests are not in place yet. Use this manual checklist as a smoke test:
+Automated tests live in `Know.ApiService.Tests` and cover basic auth and article flows:
+```bash
+dotnet test
+```
+
+Use this manual checklist as a smoke test:
 1. Signup and login successfully.
 2. Create each resource type (Article, Code Snippet, Learning Resources).
 3. Verify tags and summaries populate after background processing.

@@ -88,17 +88,23 @@ var app = builder.Build();
 
 app.UseCors("AllowAll");
 
-// Initialize Database
-await DatabaseInitializer.InitializeAsync(app.Services);
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    // Initialize Database
+    await DatabaseInitializer.InitializeAsync(app.Services);
 
-// Initialize Tag Cache
-await app.Services.GetRequiredService<TagCacheService>().InitializeAsync();
+    // Initialize Tag Cache
+    await app.Services.GetRequiredService<TagCacheService>().InitializeAsync();
+}
 
 // Configure the HTTP request pipeline.
 app.UseSwagger();
 app.UseSwaggerUI();
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -249,3 +255,5 @@ app.MapAdminEndpoints();
 app.Run();
 
 public record LoginRequest(string Email, string Password);
+
+public partial class Program { }
