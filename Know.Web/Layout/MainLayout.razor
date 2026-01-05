@@ -1,6 +1,9 @@
 ﻿@inherits LayoutComponentBase
+@using Know.Shared.Models
+@using System.Net.Http.Headers
 @inject Know.Web.Services.AppState AppState
 @inject Know.Web.Services.ThemeService ThemeService
+@inject HttpClient Http
 @implements IDisposable
 
 <div class="min-h-screen bg-[#fcfcfc] dark:bg-slate-950 flex flex-col font-sans transition-colors duration-200">
@@ -29,12 +32,59 @@
                         </button>
 
                         <!-- Notifications -->
-                        <button class="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors relative">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
-                            </svg>
-                            <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                        </button>
+                        <div class="relative">
+                            <button @onclick="ToggleNotifications" class="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors relative notification-bell" title="Notifications" aria-label="Notifications">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
+                                </svg>
+                                @if (hasUnreadNotifications)
+                                {
+                                    <span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                                }
+                            </button>
+
+                            @if (showNotifications)
+                            {
+                                <div class="absolute right-0 mt-2 w-80 rounded-xl shadow-lg bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div class="px-4 py-3 border-b border-slate-50 dark:border-slate-800">
+                                        <p class="text-sm font-semibold text-slate-900 dark:text-white">Notifications</p>
+                                        <p class="text-xs text-slate-500">
+                                            @(isLoadingNotifications ? "Loading..." : notifications.Count == 0 ? "You're all caught up." : "Recent activity")
+                                        </p>
+                                    </div>
+                                    <div class="max-h-80 overflow-auto">
+                                        @if (isLoadingNotifications)
+                                        {
+                                            <div class="px-4 py-4 text-sm text-slate-500">Fetching notifications...</div>
+                                        }
+                                        else if (notifications.Count == 0)
+                                        {
+                                            <div class="px-4 py-6 text-sm text-slate-500">No notifications yet.</div>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var notification in notifications)
+                                            {
+                                                <button type="button" @onclick="() => OpenNotification(notification)" class="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                                                    <div class="flex gap-3">
+                                                        <span class="mt-1 h-2 w-2 rounded-full @(notification.IsRead ? "bg-transparent" : "bg-blue-500")"></span>
+                                                        <div class="flex-1">
+                                                            <p class="text-sm text-slate-900 dark:text-white">@notification.Message</p>
+                                                            <p class="text-xs text-slate-500">@FormatNotificationTime(notification.CreatedAt)</p>
+                                                        </div>
+                                                    </div>
+                                                </button>
+                                            }
+                                        }
+                                    </div>
+                                    <div class="px-4 py-3 border-t border-slate-50 dark:border-slate-800">
+                                        <a href="profile" class="text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
+                                            Manage notification preferences
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
 
                         <!-- Profile Dropdown -->
                         <div class="relative" @onclick="ToggleDropdown">
@@ -122,11 +172,15 @@
     [Inject] Blazored.LocalStorage.ILocalStorageService LocalStorage { get; set; } = default!;
 
     private bool showDropdown = false;
+    private bool showNotifications = false;
+    private bool hasUnreadNotifications = false;
     private bool showModal = false;
     private bool isClosing = false;
     private string modalMode = "create"; // "create" or "view"
     private Know.Shared.Models.Article? selectedArticle = null;
     private string? userId;
+    private List<Notification> notifications = new();
+    private bool isLoadingNotifications = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -143,6 +197,7 @@
             userId = user.FindFirst("sub")?.Value 
                 ?? user.FindFirst("nameid")?.Value 
                 ?? user.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            await LoadNotificationsAsync();
         }
     }
 
@@ -156,6 +211,96 @@
     private void ToggleDropdown()
     {
         showDropdown = !showDropdown;
+        if (showDropdown)
+        {
+            showNotifications = false;
+        }
+    }
+
+    private async Task ToggleNotifications()
+    {
+        showNotifications = !showNotifications;
+        if (showNotifications)
+        {
+            showDropdown = false;
+            await LoadNotificationsAsync();
+
+            if (notifications.Any(n => !n.IsRead))
+            {
+                await MarkNotificationsReadAsync();
+                foreach (var notification in notifications)
+                {
+                    notification.IsRead = true;
+                }
+            }
+
+            hasUnreadNotifications = false;
+        }
+    }
+
+    private async Task LoadNotificationsAsync()
+    {
+        var token = await LocalStorage.GetItemAsync<string>("authToken");
+        if (string.IsNullOrWhiteSpace(token))
+        {
+            notifications = new List<Notification>();
+            hasUnreadNotifications = false;
+            return;
+        }
+
+        try
+        {
+            isLoadingNotifications = true;
+            Http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            notifications = await Http.GetFromJsonAsync<List<Notification>>("/api/notifications?limit=15")
+                ?? new List<Notification>();
+            hasUnreadNotifications = notifications.Any(n => !n.IsRead);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading notifications: {ex.Message}");
+            notifications = new List<Notification>();
+            hasUnreadNotifications = false;
+        }
+        finally
+        {
+            isLoadingNotifications = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task MarkNotificationsReadAsync()
+    {
+        try
+        {
+            await Http.PostAsync("/api/notifications/mark-read", null);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error marking notifications read: {ex.Message}");
+        }
+    }
+
+    private void OpenNotification(Notification notification)
+    {
+        showNotifications = false;
+        Navigation.NavigateTo($"/resource/{notification.ArticleId}");
+    }
+
+    private string FormatNotificationTime(DateTime date)
+    {
+        var timeSpan = DateTime.UtcNow - date;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "Just now";
+        if (timeSpan.TotalHours < 1)
+            return $"{(int)timeSpan.TotalMinutes}m ago";
+        if (timeSpan.TotalDays < 1)
+            return $"{(int)timeSpan.TotalHours}h ago";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays}d ago";
+
+        return date.ToString("MMM dd");
     }
 
     private void HandleAddResource()

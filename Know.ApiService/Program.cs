@@ -253,6 +253,7 @@ app.MapGet("/api/tags", (TagCacheService tagCache) =>
 .RequireAuthorization();
 
 app.MapProfileEndpoints();
+app.MapNotificationEndpoints();
 app.MapAdminEndpoints();
 
 app.Run();

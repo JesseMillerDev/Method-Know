@@ -8,7 +8,6 @@ obj/
 *.suo
 [Dd]ebug/
 [Rr]elease/
-*.dll
 *.pdb
 *.exe
 

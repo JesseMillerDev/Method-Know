@@ -71,6 +71,19 @@ public static class DatabaseInitializer
             try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""Bio"" TEXT NULL;"); } catch (SqliteException) {}
             try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""Interests"" TEXT NULL;"); } catch (SqliteException) {}
             try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""NotificationPreferences"" TEXT NULL;"); } catch (SqliteException) {}
+
+            // 6. Create Notifications table
+            await connection.ExecuteAsync(@"
+                CREATE TABLE IF NOT EXISTS ""Notifications"" (
+                    ""Id"" INTEGER NOT NULL CONSTRAINT ""PK_Notifications"" PRIMARY KEY AUTOINCREMENT,
+                    ""UserId"" TEXT NOT NULL,
+                    ""ActorUserId"" TEXT NOT NULL,
+                    ""ArticleId"" INTEGER NOT NULL,
+                    ""Type"" TEXT NOT NULL,
+                    ""Message"" TEXT NOT NULL,
+                    ""IsRead"" INTEGER NOT NULL DEFAULT 0,
+                    ""CreatedAt"" TEXT NOT NULL
+                );");
         }
         catch (Exception ex)
         {

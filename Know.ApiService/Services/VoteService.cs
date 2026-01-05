@@ -21,6 +21,8 @@ public class VoteService
         var article = await _dbContext.Articles.FindAsync(articleId);
         if (article == null) return false;
 
+        var shouldNotify = false;
+
         if (existingVote != null)
         {
             // If clicking same vote button, toggle off (remove vote)
@@ -43,6 +45,7 @@ public class VoteService
                 {
                     article.Upvotes++;
                     article.Downvotes--;
+                    shouldNotify = true;
                 }
                 else
                 {
@@ -62,13 +65,46 @@ public class VoteService
                 VoteValue = voteValue
             });
 
-            if (voteValue == 1) article.Upvotes++;
+            if (voteValue == 1)
+            {
+                article.Upvotes++;
+                shouldNotify = true;
+            }
             else if (voteValue == -1) article.Downvotes++;
             article.VoteCount++;
         }
 
         // Recalculate Score
         article.Score = article.Upvotes - article.Downvotes;
+
+        if (shouldNotify && article.UserId != userId)
+        {
+            var actorLabel = "Someone";
+            if (int.TryParse(userId, out var actorId))
+            {
+                actorLabel = await _dbContext.Users
+                    .Where(u => u.Id == actorId)
+                    .Select(u => u.Email)
+                    .FirstOrDefaultAsync() ?? "Someone";
+            }
+
+            if (string.IsNullOrWhiteSpace(actorLabel))
+            {
+                actorLabel = "Someone";
+            }
+
+            var message = $"{actorLabel} liked your resource \"{article.Title}\".";
+            _dbContext.Notifications.Add(new Notification
+            {
+                UserId = article.UserId,
+                ActorUserId = userId,
+                ArticleId = article.Id,
+                Type = "like",
+                Message = message,
+                IsRead = false,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
 
         await _dbContext.SaveChangesAsync();
         return true;
