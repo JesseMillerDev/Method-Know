@@ -35,12 +35,13 @@
             <div class="flex flex-col md:flex-row items-center gap-8 mb-12 relative z-10">
                 <div class="relative group">
                     <div class="h-28 w-28 rounded-full bg-black text-white flex items-center justify-center text-4xl font-bold shadow-2xl ring-4 ring-white transition-transform duration-300 group-hover:scale-105">
-                        @GetInitials(user.Email)
+                        @GetInitials(user.FirstName, user.LastName, user.Email)
                     </div>
                     <div class="absolute bottom-0 right-0 h-8 w-8 bg-green-500 rounded-full border-4 border-white"></div>
                 </div>
                 <div class="text-center md:text-left">
-                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-1">@user.Email</h2>
+                    <h2 class="text-3xl font-bold text-gray-900 dark:text-white mb-1">@GetDisplayName(user)</h2>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">@user.Email</p>
                     <div class="inline-flex items-center px-3 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">
                         Member
                     </div>
@@ -52,6 +53,14 @@
                 <ValidationSummary />
 
                 <div class="space-y-8 max-w-2xl">
+                    <div class="group">
+                        <label class="block mb-3 text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-widest group-focus-within:text-black dark:group-focus-within:text-white transition-colors">Name</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <InputText id="firstName" @bind-Value="user.FirstName" class="premium-input" placeholder="First name"></InputText>
+                            <InputText id="lastName" @bind-Value="user.LastName" class="premium-input" placeholder="Last name"></InputText>
+                        </div>
+                    </div>
+
                     <div class="group">
                         <label for="bio" class="block mb-3 text-xs font-bold text-gray-500 dark:text-gray-300 uppercase tracking-widest group-focus-within:text-black dark:group-focus-within:text-white transition-colors">Bio</label>
                         <InputTextArea id="bio" @bind-Value="user.Bio" class="premium-input min-h-[140px] resize-none" placeholder="Tell us a bit about yourself..."></InputTextArea>
@@ -110,6 +119,44 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadProfileAsync();
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (user is null) return;
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync("api/profile", user);
+            if (response.IsSuccessStatusCode)
+            {
+                var updatedUser = await response.Content.ReadFromJsonAsync<User>();
+                if (updatedUser != null)
+                {
+                    user = updatedUser;
+                    if (string.IsNullOrEmpty(user.NotificationPreferences))
+                    {
+                        user.NotificationPreferences = "All"; // Default
+                    }
+                }
+
+                saveSuccess = true;
+                // Reset success message after 3 seconds
+                _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => { saveSuccess = false; StateHasChanged(); }));
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving profile: {ex.Message}");
+        }
+    }
+
+    private async Task LoadProfileAsync()
+    {
+        isLoading = true;
+        saveSuccess = false;
+
         try
         {
             var token = await LocalStorage.GetItemAsync<string>("authToken");
@@ -131,32 +178,36 @@
         finally
         {
             isLoading = false;
+            StateHasChanged();
         }
     }
 
-    private async Task HandleValidSubmit()
+    private string GetDisplayName(User profile)
     {
-        if (user is null) return;
-
-        try
-        {
-            var response = await Http.PutAsJsonAsync("api/profile", user);
-            if (response.IsSuccessStatusCode)
-            {
-                saveSuccess = true;
-                // Reset success message after 3 seconds
-                _ = Task.Delay(3000).ContinueWith(_ => InvokeAsync(() => { saveSuccess = false; StateHasChanged(); }));
-            }
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Error saving profile: {ex.Message}");
-        }
+        var first = profile.FirstName?.Trim() ?? "";
+        var last = profile.LastName?.Trim() ?? "";
+        var fullName = $"{first} {last}".Trim();
+        return string.IsNullOrWhiteSpace(fullName) ? profile.Email : fullName;
     }
 
-    private string GetInitials(string email)
+    private string GetInitials(string? firstName, string? lastName, string? email)
     {
-        if (string.IsNullOrEmpty(email)) return "?";
-        return email.Substring(0, 1).ToUpper();
+        var first = firstName?.Trim();
+        var last = lastName?.Trim();
+
+        if (!string.IsNullOrWhiteSpace(first) || !string.IsNullOrWhiteSpace(last))
+        {
+            var firstInitial = !string.IsNullOrWhiteSpace(first) ? first[0].ToString() : "";
+            var lastInitial = !string.IsNullOrWhiteSpace(last) ? last[0].ToString() : "";
+            var combined = $"{firstInitial}{lastInitial}";
+            return string.IsNullOrWhiteSpace(combined) ? "?" : combined.ToUpperInvariant();
+        }
+
+        if (!string.IsNullOrWhiteSpace(email))
+        {
+            return email.Substring(0, 1).ToUpperInvariant();
+        }
+
+        return "?";
     }
 }

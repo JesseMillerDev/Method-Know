@@ -20,7 +20,7 @@ public class AuthService
         _configuration = configuration;
     }
 
-    public async Task<User?> RegisterAsync(string email, string password)
+    public async Task<User?> RegisterAsync(string email, string password, string? firstName, string? lastName)
     {
         if (await _context.Users.AnyAsync(u => u.Email == email))
         {
@@ -31,7 +31,9 @@ public class AuthService
         var user = new User
         {
             Email = email,
-            PasswordHash = passwordHash
+            PasswordHash = passwordHash,
+            FirstName = string.IsNullOrWhiteSpace(firstName) ? null : firstName.Trim(),
+            LastName = string.IsNullOrWhiteSpace(lastName) ? null : lastName.Trim()
         };
 
         _context.Users.Add(user);

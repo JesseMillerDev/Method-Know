@@ -52,6 +52,24 @@
                 }
 
                 <div class="space-y-5">
+                    <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <AuthInput 
+                            Id="firstName"
+                            Label="First name"
+                            @bind-Value="signupModel.FirstName"
+                            Placeholder="First name"
+                            Disabled="@isLoading"
+                        />
+
+                        <AuthInput 
+                            Id="lastName"
+                            Label="Last name"
+                            @bind-Value="signupModel.LastName"
+                            Placeholder="Last name"
+                            Disabled="@isLoading"
+                        />
+                    </div>
+
                     <AuthInput 
                         Id="email"
                         Label="Email"
@@ -157,6 +175,12 @@
 
     public class SignupModel
     {
+        [Required]
+        public string FirstName { get; set; } = "";
+
+        [Required]
+        public string LastName { get; set; } = "";
+
         [Required]
         [EmailAddress]
         public string Email { get; set; } = "";

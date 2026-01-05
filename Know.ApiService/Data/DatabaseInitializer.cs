@@ -68,6 +68,8 @@ public static class DatabaseInitializer
             try { await connection.ExecuteAsync(@"ALTER TABLE ""ArticleVotes"" ADD COLUMN ""VoteValue"" INTEGER NOT NULL DEFAULT 0;"); } catch (SqliteException) {}
 
             // 5. Add Profile Fields to Users
+            try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""FirstName"" TEXT NULL;"); } catch (SqliteException) {}
+            try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""LastName"" TEXT NULL;"); } catch (SqliteException) {}
             try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""Bio"" TEXT NULL;"); } catch (SqliteException) {}
             try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""Interests"" TEXT NULL;"); } catch (SqliteException) {}
             try { await connection.ExecuteAsync(@"ALTER TABLE ""Users"" ADD COLUMN ""NotificationPreferences"" TEXT NULL;"); } catch (SqliteException) {}

@@ -113,9 +113,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // Auth Endpoints
-app.MapPost("/api/auth/signup", async (AuthService authService, [FromBody] LoginRequest request) =>
+app.MapPost("/api/auth/signup", async (AuthService authService, [FromBody] SignupRequest request) =>
 {
-    var user = await authService.RegisterAsync(request.Email, request.Password);
+    var user = await authService.RegisterAsync(request.Email, request.Password, request.FirstName, request.LastName);
     if (user == null)
     {
         return Results.Conflict("User already exists");
@@ -259,5 +259,6 @@ app.MapAdminEndpoints();
 app.Run();
 
 public record LoginRequest(string Email, string Password);
+public record SignupRequest(string Email, string Password, string? FirstName, string? LastName);
 
 public partial class Program { }

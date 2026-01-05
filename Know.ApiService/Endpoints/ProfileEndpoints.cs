@@ -56,6 +56,8 @@ public static class ProfileEndpoints
         dbUser.Bio = updatedUser.Bio;
         dbUser.Interests = updatedUser.Interests;
         dbUser.NotificationPreferences = updatedUser.NotificationPreferences;
+        dbUser.FirstName = updatedUser.FirstName;
+        dbUser.LastName = updatedUser.LastName;
 
         await db.SaveChangesAsync();
 

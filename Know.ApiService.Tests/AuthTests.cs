@@ -17,6 +17,8 @@ public class AuthTests : ApiTestBase
 
         var signupResponse = await Client.PostAsJsonAsync("/api/auth/signup", new
         {
+            FirstName = "Test",
+            LastName = "User",
             Email = email,
             Password = password
         });
