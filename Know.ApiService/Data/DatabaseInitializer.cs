@@ -7,6 +7,29 @@ namespace Know.ApiService.Data;
 
 public static class DatabaseInitializer
 {
+    private static string GetExtensionPath()
+    {
+        string fileName;
+        if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+        {
+            fileName = "vec0.dll";
+        }
+        else if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
+        {
+            fileName = "vec0.dylib";
+        }
+        else if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
+        {
+            fileName = "vec0.so";
+        }
+        else
+        {
+            fileName = "vec0.dylib";
+        }
+
+        return Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Libs", fileName);
+    }
+
     public static async Task InitializeAsync(IServiceProvider serviceProvider)
     {
         using var scope = serviceProvider.CreateScope();
@@ -64,7 +87,7 @@ public static class DatabaseInitializer
             // but LoadExtension usually takes the name.
             // If this fails, it means the extension binary is not found in the path.
             // Try to load the extension using absolute path
-            var extensionPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Libs", "vec0.dylib");
+            var extensionPath = GetExtensionPath();
             connection.LoadExtension(extensionPath);
             logger.LogInformation("Successfully loaded 'vec0' extension.");
         }

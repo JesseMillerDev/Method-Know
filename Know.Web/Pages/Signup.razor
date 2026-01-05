@@ -3,79 +3,117 @@
 @using Know.Web.Auth
 @using System.ComponentModel.DataAnnotations
 @inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
-<div class="flex min-h-full flex-col justify-center">
-  <div class="sm:mx-auto sm:w-full">
-    <h2 class="text-center text-3xl font-bold leading-tight tracking-tight text-black dark:text-white mb-8">Create your account</h2>
-  </div>
-
-  <div class="sm:mx-auto sm:w-full">
-    <EditForm Model="@signupModel" OnValidSubmit="HandleSignup" class="space-y-6">
-      <DataAnnotationsValidator />
-      
-      @if (!string.IsNullOrEmpty(errorMessage))
-      {
-        <div class="validation-message error bg-red-50 border-2 border-red-200 rounded-lg p-3 text-red-700 text-sm">
-          @errorMessage
+<div class="flex min-h-screen flex-col items-center justify-center py-12 sm:px-6 lg:px-8">
+    <!-- Header Section -->
+    <div class="mb-8 flex flex-col items-center text-center">
+        <div class="relative mb-6 h-24 w-24">
+            <!-- Ellipse Background -->
+            <div class="absolute inset-0 rounded-full bg-blue-50 dark:bg-blue-900/20"></div>
+            <!-- Icon -->
+            <div class="absolute inset-0 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-slate-900 dark:text-white">
+                    <path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>
+                </svg>
+            </div>
         </div>
-      }
+        
+        <h2 class="mb-2 text-[30px] font-semibold leading-[36px] tracking-[-0.225px] text-slate-900 dark:text-white font-['Inter']">
+            Create your account
+        </h2>
+        <p class="text-[20px] font-normal leading-[28px] tracking-[-0.1px] text-slate-900 dark:text-slate-300 font-['Inter']">
+            Start sharing and discovering learning resources
+        </p>
+    </div>
 
-      @if (!string.IsNullOrEmpty(successMessage))
-      {
-        <div class="bg-green-50 border-2 border-green-200 rounded-lg p-3 text-green-700 text-sm font-medium fade-in">
-          @successMessage
+    <!-- Signup Card -->
+    <div class="w-full max-w-[480px]">
+        <div class="bg-white dark:bg-slate-900 px-10 py-12 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.06),0px_1px_3px_0px_rgba(0,0,0,0.10)] sm:rounded-xl border border-[rgba(0,0,0,0.12)] dark:border-slate-800">
+            <EditForm Model="@signupModel" OnValidSubmit="HandleSignup" class="space-y-6">
+                <DataAnnotationsValidator />
+                
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div class="rounded-md bg-red-50 p-4">
+                        <div class="flex">
+                            <div class="flex-shrink-0">
+                                <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <div class="ml-3">
+                                <h3 class="text-sm font-medium text-red-800">@errorMessage</h3>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="space-y-5">
+                    <AuthInput 
+                        Id="email"
+                        Label="Email"
+                        @bind-Value="signupModel.Email"
+                        Placeholder="Enter your email"
+                        Disabled="@isLoading"
+                    />
+
+                    <AuthInput 
+                        Id="password"
+                        Label="Password"
+                        Type="password"
+                        @bind-Value="signupModel.Password"
+                        Placeholder="Create a strong password"
+                        Disabled="@isLoading"
+                    />
+
+                    <AuthInput 
+                        Id="confirmPassword"
+                        Label="Confirm password"
+                        Type="password"
+                        @bind-Value="signupModel.ConfirmPassword"
+                        Placeholder="Re-enter your password"
+                        Disabled="@isLoading"
+                    />
+                </div>
+
+                <div class="pt-2">
+                    <AuthButton 
+                        Text="Sign up"
+                        LoadingText="Creating account..."
+                        IsLoading="@isLoading"
+                    />
+                </div>
+            </EditForm>
+
+            <div class="mt-8 flex items-center justify-center gap-1 text-[16px] text-slate-900 dark:text-slate-300">
+                <span>Already have an account?</span>
+                <a href="login" class="font-semibold hover:underline text-slate-900 dark:text-white">Sign in</a>
+            </div>
         </div>
-      }
-
-      <div class="space-y-5">
-        <!-- Email Field -->
-        <AuthInput 
-            Id="email"
-            Label="Email address"
-            @bind-Value="signupModel.Email"
-            Placeholder="you@example.com"
-            Disabled="@isLoading"
-        />
-
-        <!-- Password Field -->
-        <AuthInput 
-            Id="password"
-            Label="Password"
-            Type="password"
-            @bind-Value="signupModel.Password"
-            Placeholder="Create a strong password"
-            Disabled="@isLoading"
-        />
-      </div>
-
-      <!-- Sign Up Button -->
-      <AuthButton 
-          Text="Sign up"
-          LoadingText="Creating account..."
-          IsLoading="@isLoading"
-      />
-    </EditForm>
-
-    <!-- Login Link -->
-    <p class="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
-      Already a member?
-      <a href="login" class="font-semibold text-black dark:text-white hover:text-gray-700 dark:hover:text-gray-200 underline underline-offset-2 decoration-2 transition-colors ml-1">Sign in</a>
-    </p>
-  </div>
+    </div>
 </div>
 
 @code {
     private SignupModel signupModel = new();
     private bool isLoading = false;
     private string errorMessage = "";
-    private string successMessage = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            Navigation.NavigateTo("/");
+        }
+    }
 
     private async Task HandleSignup()
     {
         isLoading = true;
         errorMessage = "";
-        successMessage = "";
         StateHasChanged();
 
         try
@@ -83,10 +121,23 @@
             var response = await Http.PostAsJsonAsync("api/auth/signup", signupModel);
             if (response.IsSuccessStatusCode)
             {
-                successMessage = "Account created successfully! Redirecting to login...";
-                StateHasChanged();
-                await Task.Delay(1500); // Show success message briefly
-                Navigation.NavigateTo("/login");
+                var loginResponse = await Http.PostAsJsonAsync("api/auth/login", new
+                {
+                    Email = signupModel.Email,
+                    Password = signupModel.Password
+                });
+
+                if (loginResponse.IsSuccessStatusCode)
+                {
+                    var result = await loginResponse.Content.ReadFromJsonAsync<LoginResponse>();
+                    await LocalStorage.SetItemAsync("authToken", result!.Token);
+                    ((CustomAuthStateProvider)AuthStateProvider).MarkUserAsAuthenticated(result.Token);
+                    Navigation.NavigateTo("/");
+                }
+                else
+                {
+                    errorMessage = "Account created, but automatic sign-in failed. Please sign in manually.";
+                }
             }
             else
             {
@@ -112,5 +163,14 @@
 
         [Required]
         public string Password { get; set; } = "";
+
+        [Required]
+        [Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
+        public string ConfirmPassword { get; set; } = "";
+    }
+
+    public class LoginResponse
+    {
+        public string Token { get; set; } = "";
     }
 }

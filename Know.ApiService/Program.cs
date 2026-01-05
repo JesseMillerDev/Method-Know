@@ -45,6 +45,9 @@ builder.Services.AddHostedService<EmbeddingBackgroundService>();
 // Register Gemini Service
 builder.Services.AddScoped<GeminiService>();
 
+// Register Tagging Service (Gemini-backed)
+builder.Services.AddScoped<TaggingService>();
+
 // Register Tag Cache Service
 builder.Services.AddSingleton<TagCacheService>();
 

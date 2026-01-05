@@ -340,8 +340,8 @@
             if (UseSemanticSearch)
             {
                 var desiredLimit = Math.Min(SemanticMaxLimit, currentPage * PageSize);
-                var apiUrl = $"/api/search?query={Uri.EscapeDataString(searchQuery)}&limit={desiredLimit}";
-                var semanticResults = await Http.GetFromJsonAsync<List<Article>>(apiUrl) ?? new();
+                var semanticUrl = $"/api/search?query={Uri.EscapeDataString(searchQuery)}&limit={desiredLimit}";
+                var semanticResults = await Http.GetFromJsonAsync<List<Article>>(semanticUrl) ?? new();
 
                 articles = semanticResults;
 
@@ -379,9 +379,9 @@
             queryParams.Add($"pageSize={PageSize}");
 
             var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
-            var apiUrl = $"/api/articles{queryString}";
+            var articlesUrl = $"/api/articles{queryString}";
 
-            var newArticles = await Http.GetFromJsonAsync<List<Article>>(apiUrl) ?? new();
+            var newArticles = await Http.GetFromJsonAsync<List<Article>>(articlesUrl) ?? new();
             
             if (newArticles.Count < PageSize)
             {
